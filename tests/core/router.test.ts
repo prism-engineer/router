@@ -13,7 +13,7 @@ describe('Router Core', () => {
 
     it('should expose an Express app', () => {
       expect(router.app).toBeDefined();
-      expect(typeof router.app).toBe('object');
+      expect(typeof router.app).toBe('function');
     });
 
     it('should have a loadRoutes method', () => {

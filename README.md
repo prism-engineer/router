@@ -22,17 +22,18 @@ A type-safe router library that provides Express.js integration with automatic A
 # Install the router
 npm install @prism-engineer/router
 
-# Install required peer dependency
-npm install @sinclair/typebox
+# Install required peer dependencies
+npm install @sinclair/typebox express
 ```
 
-**Note:** TypeBox is a required dependency for defining route schemas with runtime validation and type safety.
+**Note:** Both TypeBox and Express.js are required dependencies - TypeBox for defining route schemas with runtime validation and type safety, and Express.js as the underlying web framework.
 
 ## Quick Start
 
 ### 1. Import and Initialize
 
 ```typescript
+import express from 'express';
 import { router } from '@prism-engineer/router';
 
 // Access the Express app instance
@@ -49,47 +50,57 @@ Create route files using the `createApiRoute` helper. **TypeBox is required** fo
 
 ```typescript
 // api/hello.ts - Simple GET route
-import { createApiRoute } from '@prism-engineer/router';
+import { createApiRoute } from '@prism-engineer/router/createApiRoute';
 import { Type } from '@sinclair/typebox';
 
 export const helloRoute = createApiRoute({
   path: '/api/hello',
   method: 'GET',
-  outputs: {
-    body: Type.Object({
-      message: Type.String()
-    })
+  response: {
+    200: {
+      body: Type.Object({
+        message: Type.String()
+      })
+    }
   },
-  handler: (req, res) => {
-    res.json({ message: 'Hello, World!' });
+  handler: async (req) => {
+    return {
+      status: 200 as const,
+      body: { message: 'Hello, World!' }
+    };
   }
 });
 ```
 
 ```typescript
 // api/users.ts - POST route with request body
-import { createApiRoute } from '@prism-engineer/router';
+import { createApiRoute } from '@prism-engineer/router/createApiRoute';
 import { Type } from '@sinclair/typebox';
 
 export const createUserRoute = createApiRoute({
   path: '/api/users',
   method: 'POST',
-  inputs: {
+  request: {
     body: Type.Object({
       name: Type.String(),
       email: Type.String()
     })
   },
-  outputs: {
-    body: Type.Object({
-      id: Type.Number(),
-      name: Type.String(),
-      email: Type.String()
-    })
+  response: {
+    201: {
+      body: Type.Object({
+        id: Type.Number(),
+        name: Type.String(),
+        email: Type.String()
+      })
+    }
   },
-  handler: (req, res) => {
+  handler: async (req) => {
     const { name, email } = req.body;
-    res.json({ id: 1, name, email });
+    return {
+      status: 201 as const,
+      body: { id: 1, name, email }
+    };
   }
 });
 ```
@@ -97,23 +108,16 @@ export const createUserRoute = createApiRoute({
 ### 3. Load Routes Dynamically
 
 ```typescript
-// Load all API routes
-await router.loadRoutes(/api\/.*\.ts$/);
+// Load all API routes using RegExp pattern matching
+await router.loadRoutes('./api', /.*\.ts$/);
 
 // Load specific route patterns
-await router.loadRoutes(/api\/v1\/.*\.ts$/);
-await router.loadRoutes('api/**/*.ts'); // glob pattern
+await router.loadRoutes('./api/v1', /.*\.ts$/);
 
-// Load multiple patterns
-const patterns = [
-  /api\/v1\/.*\.ts$/,
-  /api\/v2\/.*\.ts$/,
-  /admin\/.*\.ts$/
-];
-
-for (const pattern of patterns) {
-  await router.loadRoutes(pattern);
-}
+// Load multiple directories and patterns
+await router.loadRoutes('./api/v1', /users\.ts$/);
+await router.loadRoutes('./api/v2', /.*\.ts$/);
+await router.loadRoutes('./admin', /.*\.ts$/);
 ```
 
 ### 4. Start the Server
@@ -134,11 +138,13 @@ Create `config.prism.router.ts` in your project root:
 ```typescript
 export default {
   outputDir: './generated',
-  clientName: 'ApiClient',
-  format: 'typescript', // or 'javascript'
+  name: 'ApiClient',
   baseUrl: 'http://localhost:3000',
-  includeTypes: true,
-};
+  routes: {
+    directory: './api',
+    pattern: /.*\.ts$/
+  }
+} as const;
 ```
 
 ### Programmatic Compilation
@@ -149,21 +155,49 @@ import { router } from '@prism-engineer/router';
 // Compile with custom config
 await router.compile({
   outputDir: './src/generated',
-  clientName: 'MyApiClient',
-  format: 'typescript',
+  name: 'MyApiClient',
   baseUrl: 'http://localhost:3000',
-  includeTypes: true,
+  routes: {
+    directory: './api',
+    pattern: /.*\.ts$/
+  }
 });
 ```
 
 ### CLI Usage
 
+The CLI provides a simple way to generate API clients from your route definitions:
+
 ```bash
 # Generate API client using config file
-npx router compile
+npx @prism-engineer/router compile
 
-# The generated client will be type-safe:
-# ./generated/ApiClient.ts
+# Alternative: use the binary name directly (after installation)
+npx prism-router compile
+
+# Show CLI help
+npx @prism-engineer/router help
+```
+
+**Configuration Options:**
+The CLI looks for configuration files in this order:
+- `config.prism.router.ts`
+- `config.prism.router.js` 
+- `prism.config.ts`
+- `prism.config.js`
+
+**Example output:**
+```
+🔍 Loading configuration...
+📁 Output directory: ./generated
+🏷️  Client name: ApiClient
+🌐 Base URL: http://localhost:3000
+📂 Routes directory: ./api
+🔍 Pattern: /.*\.ts$/
+
+⚡ Compiling API client...
+✅ API client generated successfully!
+📄 Generated file: ./generated/ApiClient.generated.ts
 ```
 
 ### Using Generated Client
@@ -171,9 +205,9 @@ npx router compile
 The generated client mirrors your API structure using actual paths:
 
 ```typescript
-import { ApiClient } from './generated/ApiClient';
+import { createApiClient } from './generated/ApiClient.generated';
 
-const client = new ApiClient('http://localhost:3000');
+const client = createApiClient('http://localhost:3000');
 
 // GET /api/hello -> client.api.hello.get()
 const hello = await client.api.hello.get();
@@ -193,23 +227,28 @@ Add query parameters to GET requests for filtering, pagination, etc:
 export const getUsersRoute = createApiRoute({
   path: '/api/users',
   method: 'GET',
-  inputs: {
+  request: {
     query: Type.Object({
       page: Type.Optional(Type.Number()),
       limit: Type.Optional(Type.Number()),
       search: Type.Optional(Type.String())
     })
   },
-  outputs: {
-    body: Type.Array(Type.Object({
-      id: Type.Number(),
-      name: Type.String(),
-      email: Type.String()
-    }))
+  response: {
+    200: {
+      body: Type.Array(Type.Object({
+        id: Type.Number(),
+        name: Type.String(),
+        email: Type.String()
+      }))
+    }
   },
-  handler: (req, res) => {
+  handler: async (req) => {
     const { page = 1, limit = 10, search } = req.query;
-    res.json([{ id: 1, name: 'John', email: 'john@example.com' }]);
+    return {
+      status: 200 as const,
+      body: [{ id: 1, name: 'John', email: 'john@example.com' }]
+    };
   }
 });
 ```
@@ -230,16 +269,21 @@ Use `{paramName}` syntax in routes. Client uses underscore notation `_paramName_
 export const getUserByIdRoute = createApiRoute({
   path: '/api/users/{userId}',
   method: 'GET',
-  outputs: {
-    body: Type.Object({
-      id: Type.Number(),
-      name: Type.String(),
-      email: Type.String()
-    })
+  response: {
+    200: {
+      body: Type.Object({
+        id: Type.Number(),
+        name: Type.String(),
+        email: Type.String()
+      })
+    }
   },
-  handler: (req, res) => {
+  handler: async (req) => {
     const { userId } = req.params;
-    res.json({ id: Number(userId), name: 'John', email: 'john@example.com' });
+    return {
+      status: 200 as const,
+      body: { id: Number(userId), name: 'John', email: 'john@example.com' }
+    };
   }
 });
 ```
@@ -261,20 +305,25 @@ Define expected headers for validation and typing:
 export const protectedRoute = createApiRoute({
   path: '/api/protected',
   method: 'GET',
-  inputs: {
+  request: {
     headers: Type.Object({
       authorization: Type.String(),
       'x-api-version': Type.Optional(Type.String())
     })
   },
-  outputs: {
-    body: Type.Object({
-      message: Type.String()
-    })
+  response: {
+    200: {
+      body: Type.Object({
+        message: Type.String()
+      })
+    }
   },
-  handler: (req, res) => {
+  handler: async (req) => {
     const { authorization } = req.headers;
-    res.json({ message: 'Access granted' });
+    return {
+      status: 200 as const,
+      body: { message: 'Access granted' }
+    };
   }
 });
 ```
@@ -298,15 +347,19 @@ Add authentication requirements to routes:
 export const secureRoute = createApiRoute({
   path: '/api/secure',
   method: 'GET',
-  outputs: {
-    body: Type.Object({
-      data: Type.String()
-    })
+  response: {
+    200: {
+      body: Type.Object({
+        data: Type.String()
+      })
+    }
   },
-  auth: { required: true, type: 'bearer' },
-  handler: (req, res) => {
-    // req.user is available when auth is configured
-    res.json({ data: 'Secret information' });
+  handler: async (req) => {
+    // Path parameters are automatically extracted and typed
+    return {
+      status: 200 as const,
+      body: { data: 'Secret information' }
+    };
   }
 });
 ```
@@ -343,22 +396,23 @@ await client.api.users.post({
 - **Path-Based Client**: Generated client mirrors your API structure (`client.api.users.get()`)
 - **JSON Schema Output**: Generate OpenAPI/Swagger documentation automatically
 
-### Authentication Support
+### Handler Functions
+
+Route handlers are **async functions** that receive a typed request object and return a response object:
+
 ```typescript
-// No auth required (default)
-// auth property can be omitted
-
-// Bearer token
-auth: { required: true, type: 'bearer' }
-
-// API key in header
-auth: { required: true, type: 'apikey', location: 'header', name: 'x-api-key' }
-
-// Basic auth
-auth: { required: true, type: 'basic' }
-
-// Custom validation
-auth: { required: true, type: 'custom', validator: (req) => boolean }
+handler: async (req) => {
+  // req.body - typed request body (if defined)
+  // req.query - typed query parameters (if defined) 
+  // req.headers - typed headers (if defined)
+  // req.params - extracted path parameters
+  
+  return {
+    status: 200 as const,
+    body: { /* response data */ },
+    headers?: { /* optional response headers */ }
+  };
+}
 ```
 
 ## Complete Example
@@ -366,7 +420,6 @@ auth: { required: true, type: 'custom', validator: (req) => boolean }
 ```typescript
 import express from 'express';
 import { router } from '@prism-engineer/router';
-import { loadConfig } from '@prism-engineer/router';
 
 async function main() {
   // Get the Express app
@@ -376,9 +429,9 @@ async function main() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   
-  // Load routes from multiple patterns
-  await router.loadRoutes(/api\/.*\.ts$/);
-  await router.loadRoutes(/admin\/.*\.ts$/);
+  // Load routes from multiple directories
+  await router.loadRoutes('./api', /.*\.ts$/);
+  await router.loadRoutes('./admin', /.*\.ts$/);
   
   // Start server
   app.listen(3000, () => {
@@ -386,8 +439,15 @@ async function main() {
   });
   
   // Generate API client
-  const config = await loadConfig();
-  await router.compile(config);
+  await router.compile({
+    outputDir: './generated',
+    name: 'ApiClient',
+    baseUrl: 'http://localhost:3000',
+    routes: {
+      directory: './api',
+      pattern: /.*\.ts$/
+    }
+  });
   console.log('✅ API client generated');
 }
 
@@ -401,19 +461,21 @@ The `config.prism.router.ts` file supports these options:
 | Option | Type | Required | Default | Description |
 |--------|------|----------|---------|-------------|
 | `outputDir` | `string` | ✅ | - | Output directory for generated client |
-| `clientName` | `string` | ✅ | - | Name of the generated client class |
-| `format` | `'typescript' \| 'javascript'` | ❌ | `'typescript'` | Output format |
-| `baseUrl` | `string` | ❌ | `''` | Base URL for API calls |
-| `includeTypes` | `boolean` | ❌ | `true` | Include TypeScript type definitions |
+| `name` | `string` | ✅ | - | Name of the generated client function |
+| `baseUrl` | `string` | ✅ | - | Base URL for API calls |
+| `routes.directory` | `string` | ✅ | - | Directory to scan for route files |
+| `routes.pattern` | `RegExp` | ✅ | - | RegExp pattern to match route files |
 
 ```typescript
 export default {
   outputDir: './generated',
-  clientName: 'ApiClient',
-  format: 'typescript',
+  name: 'ApiClient',
   baseUrl: 'http://localhost:3000',
-  includeTypes: true,
-};
+  routes: {
+    directory: './api',
+    pattern: /.*\.ts$/
+  }
+} as const;
 ```
 
 ## Development

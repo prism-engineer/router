@@ -4,12 +4,17 @@ import { Type } from '@sinclair/typebox';
 export const helloRoute = createApiRoute({
   path: '/api/hello',
   method: 'GET',
-  outputs: {
-    body: Type.Object({
-      message: Type.String()
-    })
+  response: {
+    200: {
+      body: Type.Object({
+        message: Type.String()
+      })
+    }
   },
-  handler: (req, res) => {
-    res.json({ message: 'Hello, World!' });
+  handler: async (req) => {
+    return {
+      status: 200 as const,
+      body: { message: 'Hello, World!' }
+    };
   }
 });

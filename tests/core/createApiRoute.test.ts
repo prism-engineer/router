@@ -1,3 +1,14 @@
+/**
+ * UNIT TESTS for createApiRoute function
+ * 
+ * Tests the core route definition factory function that:
+ * - Creates route configuration objects with proper typing
+ * - Validates TypeScript type inference for request/response schemas
+ * - Ensures route objects have correct structure and properties
+ * 
+ * MOCKING: None needed - pure function that returns config objects
+ * SCOPE: Only tests the createApiRoute function, not actual HTTP handling
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApiRoute } from '../../src/createApiRoute';
 import { Type } from '@sinclair/typebox';
@@ -12,13 +23,18 @@ describe('createApiRoute', () => {
       const route = createApiRoute({
         path: '/api/hello',
         method: 'GET',
-        outputs: {
-          body: Type.Object({
-            message: Type.String()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              message: Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
-          res.json({ message: 'Hello, World!' });
+        handler: async (req) => {
+          return {
+            status: 200 as const,
+            body: { message: 'Hello, World!' }
+          };
         }
       });
 
@@ -32,45 +48,49 @@ describe('createApiRoute', () => {
       const route = createApiRoute({
         path: '/api/users',
         method: 'POST',
-        inputs: {
+        request: {
           body: Type.Object({
             name: Type.String(),
             email: Type.String()
           })
         },
-        outputs: {
-          body: Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            email: Type.String()
-          })
+        response: {
+          201: {
+            body: Type.Object({
+              id: Type.Number(),
+              name: Type.String(),
+              email: Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { name, email } = req.body;
-          res.json({ id: 1, name, email });
+          return {
+            status: 201 as const,
+            body: { id: 1, name, email }
+          };
         }
       });
 
       expect(route.path).toBe('/api/users');
       expect(route.method).toBe('POST');
-      expect(route.inputs?.body).toBeDefined();
-      expect(route.outputs.body).toBeDefined();
+      expect(route.request?.body).toBeDefined();
+      expect(route.response?.[201]?.body).toBeDefined();
     });
 
     it('should handle optional properties', () => {
       const route = createApiRoute({
         path: '/api/simple',
         method: 'GET',
-        handler: (req, res) => {
-          res.json({ status: 'ok' });
+        handler: async (req) => {
+          // Handler can return void for simple responses
         }
       });
 
       expect(route.path).toBe('/api/simple');
       expect(route.method).toBe('GET');
-      expect(route.inputs).toBeUndefined();
-      expect(route.outputs).toBeUndefined();
-      expect(route.auth).toBeUndefined();
+      expect(route.request).toBeUndefined();
+      expect(route.response).toBeUndefined();
     });
   });
 
@@ -79,26 +99,31 @@ describe('createApiRoute', () => {
       const route = createApiRoute({
         path: '/api/test',
         method: 'POST',
-        inputs: {
+        request: {
           body: Type.Object({
             name: Type.String(),
             age: Type.Number()
           })
         },
-        outputs: {
-          body: Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            age: Type.Number()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              id: Type.Number(),
+              name: Type.String(),
+              age: Type.Number()
+            })
+          }
         },
-        handler: (req, res) => {
-          res.json({ id: 1, name: req.body.name, age: req.body.age });
+        handler: async (req) => {
+          return {
+            status: 200 as const,
+            body: { id: 1, name: req.body.name, age: req.body.age }
+          };
         }
       });
 
-      expect(route.inputs?.body).toBeDefined();
-      expect(route.outputs?.body).toBeDefined();
+      expect(route.request?.body).toBeDefined();
+      expect(route.response?.[200]?.body).toBeDefined();
     });
   });
 });

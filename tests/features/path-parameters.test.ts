@@ -1,3 +1,15 @@
+/**
+ * UNIT TESTS for Path Parameter handling in route definitions
+ * 
+ * Tests that routes can define path parameters with:
+ * - Single and multiple path parameters using {paramName} syntax
+ * - Nested path parameters for complex resource hierarchies
+ * - Parameter extraction type inference via ExtractPathParams<TPath>
+ * - CRUD operations with consistent path parameter handling
+ * 
+ * MOCKING: None needed - tests route definition structure only
+ * SCOPE: Route definition validation and path parameter syntax, not HTTP routing
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApiRoute } from '../../src/createApiRoute';
 import { Type } from '@sinclair/typebox';
@@ -12,16 +24,21 @@ describe('Path Parameters', () => {
       const route = createApiRoute({
         path: '/api/users/{userId}',
         method: 'GET',
-        outputs: {
-          body: Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            email: Type.String()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              id: Type.Number(),
+              name: Type.String(),
+              email: Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { userId } = req.params;
-          res.json({ id: Number(userId), name: 'John', email: 'john@example.com' });
+          return {
+            status: 200 as const,
+            body: { id: Number(userId), name: 'John', email: 'john@example.com' }
+          };
         }
       });
 
@@ -33,16 +50,21 @@ describe('Path Parameters', () => {
       const route = createApiRoute({
         path: '/api/users/{userId}/posts/{postId}',
         method: 'GET',
-        outputs: {
-          body: Type.Object({
-            id: Type.Number(),
-            title: Type.String(),
-            authorId: Type.Number()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              id: Type.Number(),
+              title: Type.String(),
+              authorId: Type.Number()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { userId, postId } = req.params;
-          res.json({ id: Number(postId), title: 'Post Title', authorId: Number(userId) });
+          return {
+            status: 200 as const,
+            body: { id: Number(postId), title: 'Post Title', authorId: Number(userId) }
+          };
         }
       });
 
@@ -54,50 +76,65 @@ describe('Path Parameters', () => {
         createApiRoute({
           path: '/api/users/{userId}',
           method: 'GET',
-          outputs: {
-            body: Type.Object({
-              id: Type.Number(),
-              name: Type.String()
-            })
+          response: {
+            200: {
+              body: Type.Object({
+                id: Type.Number(),
+                name: Type.String()
+              })
+            }
           },
-          handler: (req, res) => {
+          handler: async (req) => {
             const { userId } = req.params;
-            res.json({ id: Number(userId), name: 'John' });
+            return {
+              status: 200 as const,
+              body: { id: Number(userId), name: 'John' }
+            };
           }
         }),
         createApiRoute({
           path: '/api/users/{userId}',
           method: 'PUT',
-          inputs: {
+          request: {
             body: Type.Object({
               name: Type.String(),
               email: Type.String()
             })
           },
-          outputs: {
-            body: Type.Object({
-              id: Type.Number(),
-              name: Type.String(),
-              email: Type.String()
-            })
+          response: {
+            200: {
+              body: Type.Object({
+                id: Type.Number(),
+                name: Type.String(),
+                email: Type.String()
+              })
+            }
           },
-          handler: (req, res) => {
+          handler: async (req) => {
             const { userId } = req.params;
             const { name, email } = req.body;
-            res.json({ id: Number(userId), name, email });
+            return {
+              status: 200 as const,
+              body: { id: Number(userId), name, email }
+            };
           }
         }),
         createApiRoute({
           path: '/api/users/{userId}',
           method: 'DELETE',
-          outputs: {
-            body: Type.Object({
-              success: Type.Boolean()
-            })
+          response: {
+            200: {
+              body: Type.Object({
+                success: Type.Boolean()
+              })
+            }
           },
-          handler: (req, res) => {
+          handler: async (req) => {
             const { userId } = req.params;
-            res.json({ success: true });
+            return {
+              status: 200 as const,
+              body: { success: true }
+            };
           }
         })
       ];
@@ -111,16 +148,21 @@ describe('Path Parameters', () => {
       const route = createApiRoute({
         path: '/api/organizations/{orgId}/teams/{teamId}/members/{memberId}',
         method: 'GET',
-        outputs: {
-          body: Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            role: Type.String()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              id: Type.Number(),
+              name: Type.String(),
+              role: Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { orgId, teamId, memberId } = req.params;
-          res.json({ id: Number(memberId), name: 'John', role: 'developer' });
+          return {
+            status: 200 as const,
+            body: { id: Number(memberId), name: 'John', role: 'developer' }
+          };
         }
       });
 

@@ -1,3 +1,15 @@
+/**
+ * UNIT TESTS for Header handling in route definitions
+ * 
+ * Tests that routes can define header schemas with:
+ * - Required and optional request headers
+ * - Response headers with proper typing
+ * - Header validation patterns (auth tokens, content types)
+ * - Custom header types and complex validation rules
+ * 
+ * MOCKING: None needed - tests route definition structure only
+ * SCOPE: Header schema definition validation, not actual HTTP header processing
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApiRoute } from '../../src/createApiRoute';
 import { Type } from '@sinclair/typebox';
@@ -12,24 +24,29 @@ describe('Headers', () => {
       const route = createApiRoute({
         path: '/api/protected',
         method: 'GET',
-        inputs: {
+        request: {
           headers: Type.Object({
             authorization: Type.String(),
             'content-type': Type.String()
           })
         },
-        outputs: {
-          body: Type.Object({
-            message: Type.String()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              message: Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { authorization } = req.headers;
-          res.json({ message: 'Access granted' });
+          return {
+            status: 200 as const,
+            body: { message: 'Access granted' }
+          };
         }
       });
 
-      expect(route.inputs?.headers).toBeDefined();
+      expect(route.request?.headers).toBeDefined();
       expect(route.path).toBe('/api/protected');
     });
 
@@ -37,93 +54,110 @@ describe('Headers', () => {
       const route = createApiRoute({
         path: '/api/data',
         method: 'GET',
-        inputs: {
+        request: {
           headers: Type.Object({
             authorization: Type.String(),
             'x-api-version': Type.Optional(Type.String()),
             'x-request-id': Type.Optional(Type.String())
           })
         },
-        outputs: {
-          body: Type.Object({
-            data: Type.Array(Type.Any())
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              data: Type.Array(Type.Any())
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { authorization, 'x-api-version': version } = req.headers;
-          res.json({ data: [] });
+          return {
+            status: 200 as const,
+            body: { data: [] }
+          };
         }
       });
 
-      expect(route.inputs?.headers).toBeDefined();
+      expect(route.request?.headers).toBeDefined();
     });
 
     it('should support different header types', () => {
       const route = createApiRoute({
         path: '/api/upload',
         method: 'POST',
-        inputs: {
+        request: {
           headers: Type.Object({
             'content-type': Type.Literal('multipart/form-data'),
-            'content-length': Type.Number(),
+            'content-length': Type.String(),
             'x-upload-type': Type.Union([
               Type.Literal('image'),
               Type.Literal('document'),
               Type.Literal('video')
             ]),
-            'x-compress': Type.Optional(Type.Boolean())
+            'x-compress': Type.Optional(Type.String())
           }),
           body: Type.Object({
             file: Type.String()
           })
         },
-        outputs: {
-          body: Type.Object({
-            fileId: Type.String(),
-            url: Type.String()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              fileId: Type.String(),
+              url: Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const headers = req.headers;
-          res.json({ fileId: '123', url: '/files/123' });
+          return {
+            status: 200 as const,
+            body: { fileId: '123', url: '/files/123' }
+          };
         }
       });
 
-      expect(route.inputs?.headers).toBeDefined();
-      expect(route.inputs?.body).toBeDefined();
+      expect(route.request?.headers).toBeDefined();
+      expect(route.request?.body).toBeDefined();
     });
 
     it('should support response headers', () => {
       const route = createApiRoute({
         path: '/api/users',
         method: 'GET',
-        inputs: {
+        request: {
           query: Type.Object({
             page: Type.Optional(Type.Number()),
             limit: Type.Optional(Type.Number())
           })
         },
-        outputs: {
-          body: Type.Array(Type.Object({
-            id: Type.Number(),
-            name: Type.String()
-          })),
-          headers: Type.Object({
-            'x-total-count': Type.String(),
-            'x-page': Type.String(),
-            'x-per-page': Type.String()
-          })
+        response: {
+          200: {
+            body: Type.Array(Type.Object({
+              id: Type.Number(),
+              name: Type.String()
+            })),
+            headers: Type.Object({
+              'x-total-count': Type.String(),
+              'x-page': Type.String(),
+              'x-per-page': Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { page = 1, limit = 10 } = req.query;
-          res.set('x-total-count', '100');
-          res.set('x-page', page.toString());
-          res.set('x-per-page', limit.toString());
-          res.json([{ id: 1, name: 'John' }]);
+          return {
+            status: 200 as const,
+            body: [{ id: 1, name: 'John' }],
+            headers: {
+              'x-total-count': '100',
+              'x-page': page.toString(),
+              'x-per-page': limit.toString()
+            }
+          };
         }
       });
 
-      expect(route.outputs?.headers).toBeDefined();
+      expect(route.response?.[200]?.headers).toBeDefined();
     });
   });
 
@@ -132,29 +166,34 @@ describe('Headers', () => {
       const route = createApiRoute({
         path: '/api/secure',
         method: 'GET',
-        inputs: {
+        request: {
           headers: Type.Object({
             authorization: Type.String({ pattern: '^Bearer .+' })
           })
         },
-        outputs: {
-          body: Type.Object({
-            message: Type.String()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              message: Type.String()
+            })
+          }
         },
-        handler: (req, res) => {
-          res.json({ message: 'Authorized' });
+        handler: async (req) => {
+          return {
+            status: 200 as const,
+            body: { message: 'Authorized' }
+          };
         }
       });
 
-      expect(route.inputs?.headers).toBeDefined();
+      expect(route.request?.headers).toBeDefined();
     });
 
     it('should validate custom headers', () => {
       const route = createApiRoute({
         path: '/api/webhook',
         method: 'POST',
-        inputs: {
+        request: {
           headers: Type.Object({
             'x-webhook-signature': Type.String(),
             'x-webhook-timestamp': Type.String(),
@@ -165,18 +204,23 @@ describe('Headers', () => {
             data: Type.Any()
           })
         },
-        outputs: {
-          body: Type.Object({
-            received: Type.Boolean()
-          })
+        response: {
+          200: {
+            body: Type.Object({
+              received: Type.Boolean()
+            })
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { 'x-webhook-signature': signature } = req.headers;
-          res.json({ received: true });
+          return {
+            status: 200 as const,
+            body: { received: true }
+          };
         }
       });
 
-      expect(route.inputs?.headers).toBeDefined();
+      expect(route.request?.headers).toBeDefined();
     });
   });
 });

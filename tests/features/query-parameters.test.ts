@@ -1,3 +1,15 @@
+/**
+ * UNIT TESTS for Query Parameter handling in route definitions
+ * 
+ * Tests that routes can define query parameter schemas with:
+ * - Optional and required query parameters
+ * - Different data types (string, number, boolean, arrays)
+ * - Union types and complex validation schemas
+ * - Proper TypeScript type inference for query objects
+ * 
+ * MOCKING: None needed - tests route definition structure only
+ * SCOPE: Route definition validation, not actual HTTP query parsing
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApiRoute } from '../../src/createApiRoute';
 import { Type } from '@sinclair/typebox';
@@ -12,27 +24,32 @@ describe('Query Parameters', () => {
       const route = createApiRoute({
         path: '/api/users',
         method: 'GET',
-        inputs: {
+        request: {
           query: Type.Object({
             page: Type.Optional(Type.Number()),
             limit: Type.Optional(Type.Number()),
             search: Type.Optional(Type.String())
           })
         },
-        outputs: {
-          body: Type.Array(Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            email: Type.String()
-          }))
+        response: {
+          200: {
+            body: Type.Array(Type.Object({
+              id: Type.Number(),
+              name: Type.String(),
+              email: Type.String()
+            }))
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { page = 1, limit = 10, search } = req.query;
-          res.json([{ id: 1, name: 'John', email: 'john@example.com' }]);
+          return {
+            status: 200 as const,
+            body: [{ id: 1, name: 'John', email: 'john@example.com' }]
+          };
         }
       });
 
-      expect(route.inputs?.query).toBeDefined();
+      expect(route.request?.query).toBeDefined();
       expect(route.path).toBe('/api/users');
       expect(route.method).toBe('GET');
     });
@@ -41,32 +58,37 @@ describe('Query Parameters', () => {
       const route = createApiRoute({
         path: '/api/search',
         method: 'GET',
-        inputs: {
+        request: {
           query: Type.Object({
             q: Type.String(), // required
             category: Type.Optional(Type.String())
           })
         },
-        outputs: {
-          body: Type.Array(Type.Object({
-            id: Type.Number(),
-            title: Type.String()
-          }))
+        response: {
+          200: {
+            body: Type.Array(Type.Object({
+              id: Type.Number(),
+              title: Type.String()
+            }))
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { q, category } = req.query;
-          res.json([{ id: 1, title: `Results for ${q}` }]);
+          return {
+            status: 200 as const,
+            body: [{ id: 1, title: `Results for ${q}` }]
+          };
         }
       });
 
-      expect(route.inputs?.query).toBeDefined();
+      expect(route.request?.query).toBeDefined();
     });
 
     it('should support different query parameter types', () => {
       const route = createApiRoute({
         path: '/api/products',
         method: 'GET',
-        inputs: {
+        request: {
           query: Type.Object({
             minPrice: Type.Optional(Type.Number()),
             maxPrice: Type.Optional(Type.Number()),
@@ -79,20 +101,25 @@ describe('Query Parameters', () => {
             ]))
           })
         },
-        outputs: {
-          body: Type.Array(Type.Object({
-            id: Type.Number(),
-            name: Type.String(),
-            price: Type.Number()
-          }))
+        response: {
+          200: {
+            body: Type.Array(Type.Object({
+              id: Type.Number(),
+              name: Type.String(),
+              price: Type.Number()
+            }))
+          }
         },
-        handler: (req, res) => {
+        handler: async (req) => {
           const { minPrice, maxPrice, inStock, tags, sortBy } = req.query;
-          res.json([{ id: 1, name: 'Product 1', price: 99.99 }]);
+          return {
+            status: 200 as const,
+            body: [{ id: 1, name: 'Product 1', price: 99.99 }]
+          };
         }
       });
 
-      expect(route.inputs?.query).toBeDefined();
+      expect(route.request?.query).toBeDefined();
     });
   });
 
@@ -103,25 +130,30 @@ describe('Query Parameters', () => {
       const route = createApiRoute({
         path: '/api/users',
         method: 'GET',
-        inputs: {
+        request: {
           query: Type.Object({
             page: Type.Optional(Type.Number()),
             limit: Type.Optional(Type.Number())
           })
         },
-        outputs: {
-          body: Type.Array(Type.Object({
-            id: Type.Number(),
-            name: Type.String()
-          }))
+        response: {
+          200: {
+            body: Type.Array(Type.Object({
+              id: Type.Number(),
+              name: Type.String()
+            }))
+          }
         },
-        handler: (req, res) => {
-          res.json([]);
+        handler: async (req) => {
+          return {
+            status: 200 as const,
+            body: []
+          };
         }
       });
 
       // Verify route can be called with query parameters
-      expect(route.inputs?.query).toBeDefined();
+      expect(route.request?.query).toBeDefined();
     });
   });
 });
