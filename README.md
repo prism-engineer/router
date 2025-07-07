@@ -1,4 +1,4 @@
-# @prism/router
+# @prism-engineer/router
 
 A type-safe router library that provides Express.js integration with automatic API client code generation. This library serves as a wrapper around Express.js that adds:
 
@@ -20,7 +20,7 @@ A type-safe router library that provides Express.js integration with automatic A
 
 ```bash
 # Install the router
-npm install @prism/router
+npm install @prism-engineer/router
 
 # Install required peer dependency
 npm install @sinclair/typebox
@@ -33,7 +33,7 @@ npm install @sinclair/typebox
 ### 1. Import and Initialize
 
 ```typescript
-import { router } from '@prism/router';
+import { router } from '@prism-engineer/router';
 
 // Access the Express app instance
 const app = router.app;
@@ -49,7 +49,7 @@ Create route files using the `createApiRoute` helper. **TypeBox is required** fo
 
 ```typescript
 // api/hello.ts - Simple GET route
-import { createApiRoute } from '@prism/router';
+import { createApiRoute } from '@prism-engineer/router';
 import { Type } from '@sinclair/typebox';
 
 export const helloRoute = createApiRoute({
@@ -68,7 +68,7 @@ export const helloRoute = createApiRoute({
 
 ```typescript
 // api/users.ts - POST route with request body
-import { createApiRoute } from '@prism/router';
+import { createApiRoute } from '@prism-engineer/router';
 import { Type } from '@sinclair/typebox';
 
 export const createUserRoute = createApiRoute({
@@ -144,7 +144,7 @@ export default {
 ### Programmatic Compilation
 
 ```typescript
-import { router } from '@prism/router';
+import { router } from '@prism-engineer/router';
 
 // Compile with custom config
 await router.compile({
@@ -365,8 +365,8 @@ auth: { required: true, type: 'custom', validator: (req) => boolean }
 
 ```typescript
 import express from 'express';
-import { router } from '@prism/router';
-import { loadConfig } from '@prism/router';
+import { router } from '@prism-engineer/router';
+import { loadConfig } from '@prism-engineer/router';
 
 async function main() {
   // Get the Express app
@@ -429,7 +429,7 @@ export default {
 
 ## Package Info
 
-- Package name: `@prism/router`
+- Package name: `@prism-engineer/router`
 - Type: Library package for Express.js applications
 - Current version: 0.0.1
 - Node.js compatibility: >= 16.0.0

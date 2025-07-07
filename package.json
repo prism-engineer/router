@@ -1,6 +1,9 @@
 {
-  "name": "@prism/router",
+  "name": "@prism-engineer/router",
   "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "vitest",
     "test:watch": "vitest --watch",
