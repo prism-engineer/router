@@ -68,7 +68,17 @@ export const createRouter = (): RouterInterface => {
         try {
           const result = await route.handler(req as any);
           if (result && typeof result === 'object' && 'status' in result) {
-            res.status(result.status).json(result.body);
+            if ('custom' in result && typeof result.custom === 'function') {
+              // Custom content type - user controls response
+              result.custom(res);
+            } else {
+              // JSON content type - auto-serialize
+              const responseSchema = route.response?.[result.status];
+              if (responseSchema?.contentType) {
+                res.setHeader('Content-Type', responseSchema.contentType);
+              }
+              res.status(result.status).json(result.body);
+            }
           }
         } catch (error) {
           res.status(500).json({ error: 'Internal server error' });

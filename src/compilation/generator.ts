@@ -63,6 +63,18 @@ async function extractRequestTypes(route: any): Promise<{ query?: string, body?:
   return result;
 }
 
+// JSON-like content types that support TypeBox schemas
+const JSON_CONTENT_TYPES = [
+  'application/json',
+  'application/vnd.api+json',
+  'application/ld+json',
+  'text/json'
+];
+
+function isJsonContentType(contentType: string): boolean {
+  return JSON_CONTENT_TYPES.includes(contentType);
+}
+
 async function extractResponseUnion(route: any): Promise<string> {
   if (!route.response || Object.keys(route.response).length === 0) {
     return '{ status: number; body: any; headers: Record<string, string> }';
@@ -74,14 +86,22 @@ async function extractResponseUnion(route: any): Promise<string> {
     let bodyType = 'any';
     let headersType = 'Record<string, string>';
 
-    // Extract body type if defined
-    if (responseSchema.body) {
+    // Check if this is a JSON content type with body schema
+    if (responseSchema.contentType && isJsonContentType(responseSchema.contentType) && responseSchema.body) {
+      const bodyTypeCode = await extractTypeFromSchema(responseSchema.body, `Response${statusCode}Body`);
+      const typeMatch = bodyTypeCode.match(/export interface Response\d+Body \{([^}]*)\}/s);
+      if (typeMatch) {
+        bodyType = `{ ${typeMatch[1].trim()} }`;
+      }
+    } else if (responseSchema.body && !responseSchema.contentType) {
+      // Backward compatibility: if no contentType specified but body exists, treat as JSON
       const bodyTypeCode = await extractTypeFromSchema(responseSchema.body, `Response${statusCode}Body`);
       const typeMatch = bodyTypeCode.match(/export interface Response\d+Body \{([^}]*)\}/s);
       if (typeMatch) {
         bodyType = `{ ${typeMatch[1].trim()} }`;
       }
     }
+    // For custom content types (non-JSON), bodyType remains 'any'
 
     // Extract headers type if defined
     if (responseSchema.headers) {
@@ -192,7 +212,19 @@ async function generateMethodImplementation(route: any): Promise<string> {
   
   // Make request and handle response
   implementation += `      const response = await fetch(url, fetchOptions);\n`;
-  implementation += `      const responseBody = await response.json();\n`;
+  implementation += `      const contentType = response.headers.get('content-type') || '';\n`;
+  implementation += `      let responseBody: any;\n`;
+  implementation += `      \n`;
+  implementation += `      // Handle different content types\n`;
+  implementation += `      if (contentType.includes('application/json') || \n`;
+  implementation += `          contentType.includes('application/vnd.api+json') || \n`;
+  implementation += `          contentType.includes('application/ld+json') || \n`;
+  implementation += `          contentType.includes('text/json')) {\n`;
+  implementation += `        responseBody = await response.json();\n`;
+  implementation += `      } else {\n`;
+  implementation += `        responseBody = response; // Return raw response for custom content types\n`;
+  implementation += `      }\n`;
+  implementation += `      \n`;
   implementation += `      return {\n`;
   implementation += `        status: response.status as any,\n`;
   implementation += `        body: responseBody,\n`;

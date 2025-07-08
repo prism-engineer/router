@@ -1,6 +1,7 @@
 import { Static, TLiteral, TNumber, TObject, TSchema, TString, TUnion, Type } from '@sinclair/typebox';
 import { RouteConfig } from './core/types';
 import { BaseAuthScheme, AuthContext, ExtractAuthResultFromSchemes } from './createAuthScheme';
+import express from 'express';
 
 type Expand<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;
 
@@ -14,28 +15,54 @@ type ExtractPathParams<TPath extends string> =
 type IsNever<T> = [T] extends [never] ? true : false;
 
 type HandlerOutput<TResponse extends GenericResponseSchema> = {
-  [K in keyof TResponse]: {
-    status: K extends number ? K : never;
-  } & (TResponse[K] extends { body: infer TBody } 
-    ? TBody extends TSchema 
-      ? { body: Static<TBody> }
-      : {}
-    : {}) & (TResponse[K] extends { headers: infer THeaders } 
-    ? THeaders extends TSchema 
-      ? { headers: Static<THeaders> }
-      : {}
-    : {})
+  [K in keyof TResponse]: 
+    // JSON content type with body schema
+    TResponse[K] extends { contentType: JsonContentType; body: infer TBody }
+      ? TBody extends TSchema
+        ? { status: K extends number ? K : never; body: Static<TBody> }
+        : never
+    // Custom content type (non-JSON)
+    : TResponse[K] extends { contentType: string; body?: never }
+      ? { status: K extends number ? K : never; custom: (res: express.Response) => void }
+    // Backward compatibility: body without contentType (assume JSON)
+    : TResponse[K] extends { body: infer TBody }
+      ? TBody extends TSchema
+        ? { status: K extends number ? K : never; body: Static<TBody> }
+        : never
+    : never
 }[keyof TResponse]
 
 type HandlerReturnType<TResponse extends GenericResponseSchema | never> =
   IsNever<TResponse> extends true ? Promise<void> :
     Promise<HandlerOutput<TResponse extends GenericResponseSchema ? TResponse : never>>;
 
+// JSON-like content types that support TypeBox schemas
+type JsonContentType = 
+  | 'application/json'
+  | 'application/vnd.api+json'
+  | 'application/ld+json'
+  | 'text/json';
+
+// Response schema that supports both JSON and custom content types
+type ResponseSchemaEntry = 
+  | {
+      contentType: JsonContentType;
+      body: TSchema;
+      headers?: TObject<{ [K in string]: TString }>;
+    }
+  | {
+      contentType: string; // Any content type (custom)
+      body?: never; // No body schema for custom content types
+      headers?: TObject<{ [K in string]: TString }>;
+    }
+  | {
+      // Backward compatibility: body without contentType (assume JSON)
+      body: TSchema;
+      headers?: TObject<{ [K in string]: TString }>;
+    };
+
 type GenericResponseSchema = {
-  [K in number]: {
-    body: TSchema;
-    headers?: TObject<{ [K in string]: TString }>;
-  }
+  [K in number]: ResponseSchemaEntry;
 };
 
 export type CreateApiRoute = <
