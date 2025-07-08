@@ -46,8 +46,6 @@ export const createRouter = (): RouterInterface => {
       // Convert path params from {param} to :param format for Express
       const expressPath = route.path.replace(/{(\w+)}/g, ':$1');
       
-      console.log("ABOUT TO REGISTER ROUTE", route.method, expressPath)
-      
       // Create middleware array
       const middleware: any[] = [];
       
@@ -82,7 +80,6 @@ export const createRouter = (): RouterInterface => {
         expressPath,
         ...middleware
       );
-      console.log("REGISTERED ROUTE", route.method, expressPath)
     },
     async compile(config: CompilationConfig): Promise<void> {
       if (!config) {
