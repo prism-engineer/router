@@ -38,26 +38,29 @@ describe('Authentication System', () => {
   describe('createAuthScheme', () => {
     it('should create a bearer token auth scheme', () => {
       const bearerAuth = createAuthScheme({
-        type: 'bearer',
-        validate: async (token: string) => {
-          if (token === 'valid-token') {
-            return { user: { id: 1, name: 'John' }, scopes: ['read'] };
+        name: 'bearer' as const,
+        validate: async (req: express.Request) => {
+          const authHeader = req.headers.authorization;
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.substring(7);
+            if (token === 'valid-token') {
+              return { user: { id: 1, name: 'John' }, scopes: ['read'] };
+            }
           }
           throw new Error('Invalid token');
         }
       });
 
-      expect(bearerAuth).toHaveProperty('type', 'bearer');
+      expect(bearerAuth).toHaveProperty('name', 'bearer');
       expect(bearerAuth).toHaveProperty('validate');
       expect(typeof bearerAuth.validate).toBe('function');
     });
 
     it('should create an API key auth scheme', () => {
       const apiKeyAuth = createAuthScheme({
-        type: 'apiKey',
-        in: 'header',
-        name: 'x-api-key',
-        validate: async (key: string) => {
+        name: 'apiKey' as const,
+        validate: async (req: express.Request) => {
+          const key = req.headers['x-api-key'] as string;
           if (key === 'valid-key') {
             return { client: { id: 'abc123' }, scopes: ['read', 'write'] };
           }
@@ -65,23 +68,23 @@ describe('Authentication System', () => {
         }
       });
 
-      expect(apiKeyAuth).toHaveProperty('type', 'apiKey');
-      expect(apiKeyAuth).toHaveProperty('in', 'header');
-      expect(apiKeyAuth).toHaveProperty('name', 'x-api-key');
+      expect(apiKeyAuth).toHaveProperty('name', 'apiKey');
       expect(typeof apiKeyAuth.validate).toBe('function');
     });
 
     it('should create a custom auth scheme', () => {
       const customAuth = createAuthScheme({
-        type: 'custom',
-        extract: (req: express.Request) => req.headers['x-custom-auth'] as string,
-        validate: async (value: string) => {
-          return { customData: value };
+        name: 'custom' as const,
+        validate: async (req: express.Request) => {
+          const value = req.headers['x-custom-auth'] as string;
+          if (value) {
+            return { customData: value };
+          }
+          throw new Error('Missing custom auth header');
         }
       });
 
-      expect(customAuth).toHaveProperty('type', 'custom');
-      expect(typeof customAuth.extract).toBe('function');
+      expect(customAuth).toHaveProperty('name', 'custom');
       expect(typeof customAuth.validate).toBe('function');
     });
   });
@@ -89,10 +92,14 @@ describe('Authentication System', () => {
   describe('route authentication', () => {
     it('should protect route with single auth scheme', async () => {
       const bearerAuth = createAuthScheme({
-        type: 'bearer',
-        validate: async (token: string) => {
-          if (token === 'valid-token') {
-            return { user: { id: 1, name: 'John' } };
+        name: 'bearer' as const,
+        validate: async (req: express.Request) => {
+          const authHeader = req.headers.authorization;
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.substring(7);
+            if (token === 'valid-token') {
+              return { user: { id: 1, name: 'John' } };
+            }
           }
           throw new Error('Invalid token');
         }
@@ -120,7 +127,7 @@ describe('Authentication System', () => {
             status: 200 as const,
             body: {
               message: 'Access granted',
-              userId: req.auth.user.id
+              userId: req.auth.context.user.id
             }
           };
         }
@@ -154,20 +161,23 @@ describe('Authentication System', () => {
 
     it('should support multiple auth schemes with OR logic', async () => {
       const bearerAuth = createAuthScheme({
-        type: 'bearer',
-        validate: async (token: string) => {
-          if (token === 'bearer-token') {
-            return { user: { id: 1, type: 'user' } };
+        name: 'bearer' as const,
+        validate: async (req: express.Request) => {
+          const authHeader = req.headers.authorization;
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.substring(7);
+            if (token === 'bearer-token') {
+              return { user: { id: 1, type: 'user' } };
+            }
           }
           throw new Error('Invalid bearer token');
         }
       });
 
       const apiKeyAuth = createAuthScheme({
-        type: 'apiKey',
-        in: 'header',
-        name: 'x-api-key',
-        validate: async (key: string) => {
+        name: 'apiKey' as const,
+        validate: async (req: express.Request) => {
+          const key = req.headers['x-api-key'] as string;
           if (key === 'api-key-123') {
             return { client: { id: 'abc123', type: 'service' } };
           }
@@ -188,7 +198,7 @@ describe('Authentication System', () => {
           }
         },
         handler: async (req) => {
-          const authType = req.auth.user ? 'user' : 'service';
+          const authType = req.auth.name === 'bearer' ? 'user' : 'service';
           return {
             status: 200 as const,
             body: {
@@ -231,7 +241,7 @@ describe('Authentication System', () => {
       });
 
       const bearerAuth = createAuthScheme({
-        type: 'bearer',
+        name: 'bearer' as const,
         validate: mockValidate
       });
 
@@ -253,14 +263,14 @@ describe('Authentication System', () => {
         handler: async (req) => {
           // Auth context should be available
           expect(req.auth).toBeDefined();
-          expect(req.auth.user).toBeDefined();
-          expect(req.auth.scopes).toBeDefined();
+          expect(req.auth.context.user).toBeDefined();
+          expect(req.auth.context.scopes).toBeDefined();
 
           return {
             status: 200 as const,
             body: {
-              user: req.auth.user,
-              scopes: req.auth.scopes
+              user: req.auth.context.user,
+              scopes: req.auth.context.scopes
             }
           };
         }
@@ -274,7 +284,11 @@ describe('Authentication System', () => {
         .set('Authorization', 'Bearer test-token')
         .expect(200);
 
-      expect(mockValidate).toHaveBeenCalledWith('test-token');
+      expect(mockValidate).toHaveBeenCalledWith(expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: 'Bearer test-token'
+        })
+      }));
       expect(response.body).toEqual({
         user: { id: 42, name: 'Test User', permissions: ['read', 'write'] },
         scopes: ['read', 'write']
@@ -283,8 +297,8 @@ describe('Authentication System', () => {
 
     it('should handle auth validation errors gracefully', async () => {
       const faultyAuth = createAuthScheme({
-        type: 'bearer',
-        validate: async (token: string) => {
+        name: 'bearer' as const,
+        validate: async (req: express.Request) => {
           throw new Error('Auth service unavailable');
         }
       });
@@ -318,8 +332,10 @@ describe('Authentication System', () => {
   describe('auth extraction', () => {
     it('should extract bearer token from Authorization header', async () => {
       const bearerAuth = createAuthScheme({
-        type: 'bearer',
-        validate: async (token: string) => {
+        name: 'bearer' as const,
+        validate: async (req: express.Request) => {
+          const authHeader = req.headers.authorization;
+          const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : '';
           expect(token).toBe('extracted-token');
           return { user: { id: 1 } };
         }
@@ -344,10 +360,9 @@ describe('Authentication System', () => {
 
     it('should extract API key from custom header', async () => {
       const apiKeyAuth = createAuthScheme({
-        type: 'apiKey',
-        in: 'header',
-        name: 'x-custom-key',
-        validate: async (key: string) => {
+        name: 'apiKey' as const,
+        validate: async (req: express.Request) => {
+          const key = req.headers['x-custom-key'] as string;
           expect(key).toBe('custom-key-value');
           return { client: { id: 'test' } };
         }
@@ -372,12 +387,10 @@ describe('Authentication System', () => {
 
     it('should support custom extraction logic', async () => {
       const customAuth = createAuthScheme({
-        type: 'custom',
-        extract: (req: express.Request) => {
+        name: 'custom' as const,
+        validate: async (req: express.Request) => {
           // Custom extraction from multiple sources
-          return req.headers['x-signature'] as string || req.query.token as string;
-        },
-        validate: async (value: string) => {
+          const value = req.headers['x-signature'] as string || req.query.token as string;
           expect(value).toBe('query-token');
           return { custom: true };
         }

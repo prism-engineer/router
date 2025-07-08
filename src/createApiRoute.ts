@@ -1,6 +1,6 @@
 import { Static, TLiteral, TNumber, TObject, TSchema, TString, TUnion, Type } from '@sinclair/typebox';
 import { RouteConfig } from './core/types';
-import { AuthScheme, AuthContext } from './createAuthScheme';
+import { BaseAuthScheme, AuthContext, ExtractAuthResultFromSchemes } from './createAuthScheme';
 
 type Expand<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;
 
@@ -45,7 +45,7 @@ export type CreateApiRoute = <
   TRequestQuery extends TSchema | never = never,
   TRequestHeaders extends TObject<{ [K in string]: TString | TLiteral<string> | TUnion<(TString | TLiteral<string>)[]> }> | never = never,
   TResponse extends GenericResponseSchema | never = never,
-  TAuth extends AuthScheme | AuthScheme[] | never = never
+  TAuth extends BaseAuthScheme<string, any> | BaseAuthScheme<string, any>[] | never = never
 >(config: {
   path: TPath;
   method: TMethod;
@@ -61,7 +61,7 @@ export type CreateApiRoute = <
     query: IsNever<TRequestQuery> extends true ? {} : Static<TRequestQuery>;
     headers: IsNever<TRequestHeaders> extends true ? {} : Static<TRequestHeaders>;
     params: ExtractPathParams<TPath>;
-    auth: IsNever<TAuth> extends true ? never : AuthContext;
+    auth: IsNever<TAuth> extends true ? never : ExtractAuthResultFromSchemes<TAuth>;
   }) => HandlerReturnType<TResponse>
 }) => {
   path: TPath;
@@ -78,7 +78,7 @@ export type CreateApiRoute = <
     query: IsNever<TRequestQuery> extends true ? {} : Static<TRequestQuery>;
     headers: IsNever<TRequestHeaders> extends true ? {} : Static<TRequestHeaders>;
     params: ExtractPathParams<TPath>;
-    auth: IsNever<TAuth> extends true ? never : AuthContext;
+    auth: IsNever<TAuth> extends true ? never : ExtractAuthResultFromSchemes<TAuth>;
   }) => HandlerReturnType<TResponse>
 };
 

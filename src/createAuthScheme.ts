@@ -7,70 +7,40 @@ export interface AuthContext {
   [key: string]: any;
 }
 
-export interface BaseAuthScheme {
-  type: string;
-  validate: (value: string) => Promise<AuthContext>;
+export type AuthResult<TScheme extends string, TContext> = {
+  name: TScheme;
+  context: TContext;
+};
+
+export interface BaseAuthScheme<TName extends string = string, TAuthContext = any> {
+  name: TName;
+  validate: (req: express.Request) => Promise<TAuthContext>;
 }
 
-export interface BearerAuthScheme extends BaseAuthScheme {
-  type: 'bearer';
-}
+type ExtractAuthResult<T> = T extends BaseAuthScheme<infer TName, infer TContext> 
+  ? AuthResult<TName, TContext>
+  : never;
 
-export interface ApiKeyAuthScheme extends BaseAuthScheme {
-  type: 'apiKey';
-  in: 'header' | 'query';
-  name: string;
-}
+export type ExtractAuthResultFromSchemes<T> = T extends (infer U)[] 
+  ? ExtractAuthResult<U> 
+  : ExtractAuthResult<T>;
 
-export interface CustomAuthScheme extends BaseAuthScheme {
-  type: 'custom';
-  extract: (req: express.Request) => string | undefined;
-}
-
-export type AuthScheme = BearerAuthScheme | ApiKeyAuthScheme | CustomAuthScheme;
-
-export function createAuthScheme<T extends AuthScheme>(config: T): T {
+export function createAuthScheme<T extends BaseAuthScheme<string, any>>(config: T): T {
   return config;
 }
 
-export function extractAuthValue(scheme: AuthScheme, req: express.Request): string | undefined {
-  switch (scheme.type) {
-    case 'bearer':
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        return authHeader.substring(7);
-      }
-      return undefined;
-
-    case 'apiKey':
-      if (scheme.in === 'header') {
-        return req.headers[scheme.name] as string;
-      } else if (scheme.in === 'query') {
-        return req.query[scheme.name] as string;
-      }
-      return undefined;
-
-    case 'custom':
-      return scheme.extract(req);
-
-    default:
-      return undefined;
-  }
-}
-
-export async function validateAuth(
-  schemes: AuthScheme | AuthScheme[], 
+export async function validateAuth<T extends BaseAuthScheme<string, any> | BaseAuthScheme<string, any>[]>(
+  schemes: T,
   req: express.Request
-): Promise<AuthContext> {
+): Promise<ExtractAuthResultFromSchemes<T>> {
   const schemesToTry = Array.isArray(schemes) ? schemes : [schemes];
   let lastError: any = null;
   
   for (const scheme of schemesToTry) {
     try {
-      const value = extractAuthValue(scheme, req);
-      if (value) {
-        const authContext = await scheme.validate(value);
-        return authContext;
+      const authContext = await scheme.validate(req);
+      if (authContext) {
+        return { name: scheme.name, context: authContext } as ExtractAuthResultFromSchemes<T>;
       }
     } catch (error) {
       lastError = error;
@@ -83,5 +53,6 @@ export async function validateAuth(
   if (lastError) {
     throw lastError;
   }
+
   throw new Error('Authentication failed');
 }

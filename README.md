@@ -349,20 +349,27 @@ Define reusable authentication schemes and use them in routes:
 import { createAuthScheme } from '@prism-engineer/router/createAuthScheme';
 
 export const bearerAuth = createAuthScheme({
-  type: 'bearer',
-  validate: async (token: string) => {
-    const user = await validateJWT(token);
-    return { user, scopes: user.permissions };
+  name: 'bearer' as const,
+  validate: async (req: express.Request) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const user = await validateJWT(token);
+      return { user, scopes: user.permissions };
+    }
+    throw new Error('Missing or invalid bearer token');
   }
 });
 
 export const apiKeyAuth = createAuthScheme({
-  type: 'apiKey',
-  in: 'header',
-  name: 'x-api-key',
-  validate: async (key: string) => {
-    const client = await validateApiKey(key);
-    return { client, scopes: ['read', 'write'] };
+  name: 'apiKey' as const,
+  validate: async (req: express.Request) => {
+    const key = req.headers['x-api-key'] as string;
+    if (key) {
+      const client = await validateApiKey(key);
+      return { client, scopes: ['read', 'write'] };
+    }
+    throw new Error('Missing API key');
   }
 });
 ```
@@ -386,8 +393,9 @@ export const getUsersRoute = createApiRoute({
     }
   },
   handler: async (req) => {
-    // req.auth contains validated auth context
-    const { user } = req.auth;
+    // req.auth contains { name: <scheme>, context: <auth result> }
+    const { user } = req.auth.context;
+    const authScheme = req.auth.name; // 'bearer' in this case
     return {
       status: 200 as const,
       body: [{ id: 1, name: 'John' }]
@@ -401,7 +409,67 @@ export const flexibleRoute = createApiRoute({
   method: 'GET',
   auth: [bearerAuth, apiKeyAuth], // Either bearer OR API key
   handler: async (req) => {
+    // req.auth is a union type that preserves which scheme was used
+    if (req.auth.name === 'bearer') {
+      // TypeScript knows context contains user data
+      const { user } = req.auth.context;
+      console.log('Authenticated user:', user.id);
+    } else if (req.auth.name === 'apiKey') {
+      // TypeScript knows context contains client data
+      const { client } = req.auth.context;
+      console.log('Authenticated client:', client.id);
+    }
     return { status: 200 as const, body: { success: true } };
+  }
+});
+```
+
+**Authentication Context Structure**
+
+The `req.auth` object now has a strongly-typed structure that preserves both the authentication scheme name and the validated result:
+
+```typescript
+// req.auth structure
+{
+  name: string,                          // The name you gave your auth scheme
+  context: <YourValidateReturnType>      // Exactly what your validate function returns
+}
+```
+
+**Key Features:**
+- **Full Request Access**: Your `validate` function receives the complete `express.Request` object
+- **Type Safety**: `req.auth.context` is strongly typed based on your `validate` function's return type
+- **Scheme Discrimination**: `req.auth.name` lets you identify which auth scheme was used
+- **Maximum Flexibility**: Extract authentication data from headers, query params, cookies, or anywhere in the request
+
+**Example with Custom Return Types:**
+```typescript
+const customAuth = createAuthScheme({
+  name: 'custom-jwt' as const,
+  validate: async (req: express.Request) => {
+    // Access any part of the request
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.query.token as string ||
+                  req.cookies?.jwt;
+    
+    if (!token) throw new Error('No token provided');
+    
+    // Your validate function can return ANY type
+    const decoded = await verifyJWT(token);
+    return { userId: decoded.sub, permissions: decoded.scope.split(' ') };
+  }
+});
+
+const route = createApiRoute({
+  path: '/api/custom',
+  method: 'GET',
+  auth: customAuth,
+  handler: async (req) => {
+    // req.auth.context is typed as { userId: string, permissions: string[] }
+    const userId: string = req.auth.context.userId;
+    const permissions: string[] = req.auth.context.permissions;
+    const schemeName: 'custom-jwt' = req.auth.name;
+    // ...
   }
 });
 ```
