@@ -17,19 +17,19 @@ export interface BaseAuthScheme<TName extends string = string, TAuthContext = an
   validate: (req: express.Request) => Promise<TAuthContext>;
 }
 
-type ExtractAuthResult<T> = T extends BaseAuthScheme<infer TName, infer TContext> 
-  ? AuthResult<TName, TContext>
-  : never;
+export type ExtractAuthResultFromSchemes<T> = T extends readonly (infer U)[] 
+  ? U extends BaseAuthScheme<infer TName, infer TContext> 
+    ? AuthResult<TName, TContext>
+    : never
+  : T extends BaseAuthScheme<infer TName, infer TContext>
+    ? AuthResult<TName, TContext>
+    : never;
 
-export type ExtractAuthResultFromSchemes<T> = T extends (infer U)[] 
-  ? ExtractAuthResult<U> 
-  : ExtractAuthResult<T>;
-
-export function createAuthScheme<T extends BaseAuthScheme<string, any>>(config: T): T {
+export function createAuthScheme<const T extends BaseAuthScheme<string, any>>(config: T): T {
   return config;
 }
 
-export async function validateAuth<T extends BaseAuthScheme<string, any> | BaseAuthScheme<string, any>[]>(
+export async function validateAuth<T extends BaseAuthScheme<string, any> | readonly BaseAuthScheme<string, any>[]>(
   schemes: T,
   req: express.Request
 ): Promise<ExtractAuthResultFromSchemes<T>> {

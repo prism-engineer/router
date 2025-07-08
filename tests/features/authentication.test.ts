@@ -38,7 +38,7 @@ describe('Authentication System', () => {
   describe('createAuthScheme', () => {
     it('should create a bearer token auth scheme', () => {
       const bearerAuth = createAuthScheme({
-        name: 'bearer' as const,
+        name: 'bearer',
         validate: async (req: express.Request) => {
           const authHeader = req.headers.authorization;
           if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -58,7 +58,7 @@ describe('Authentication System', () => {
 
     it('should create an API key auth scheme', () => {
       const apiKeyAuth = createAuthScheme({
-        name: 'apiKey' as const,
+        name: 'apiKey',
         validate: async (req: express.Request) => {
           const key = req.headers['x-api-key'] as string;
           if (key === 'valid-key') {
@@ -74,7 +74,7 @@ describe('Authentication System', () => {
 
     it('should create a custom auth scheme', () => {
       const customAuth = createAuthScheme({
-        name: 'custom' as const,
+        name: 'custom',
         validate: async (req: express.Request) => {
           const value = req.headers['x-custom-auth'] as string;
           if (value) {
@@ -92,7 +92,7 @@ describe('Authentication System', () => {
   describe('route authentication', () => {
     it('should protect route with single auth scheme', async () => {
       const bearerAuth = createAuthScheme({
-        name: 'bearer' as const,
+        name: 'bearer',
         validate: async (req: express.Request) => {
           const authHeader = req.headers.authorization;
           if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -161,7 +161,7 @@ describe('Authentication System', () => {
 
     it('should support multiple auth schemes with OR logic', async () => {
       const bearerAuth = createAuthScheme({
-        name: 'bearer' as const,
+        name: 'bearer',
         validate: async (req: express.Request) => {
           const authHeader = req.headers.authorization;
           if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -175,7 +175,7 @@ describe('Authentication System', () => {
       });
 
       const apiKeyAuth = createAuthScheme({
-        name: 'apiKey' as const,
+        name: 'apiKey',
         validate: async (req: express.Request) => {
           const key = req.headers['x-api-key'] as string;
           if (key === 'api-key-123') {
@@ -235,13 +235,16 @@ describe('Authentication System', () => {
     });
 
     it('should inject auth context into request handler', async () => {
-      const mockValidate = vi.fn().mockResolvedValue({
+      const mockValidate = vi.fn<[express.Request], Promise<{
+        user: { id: number; name: string; permissions: string[] };
+        scopes: string[];
+      }>>().mockResolvedValue({
         user: { id: 42, name: 'Test User', permissions: ['read', 'write'] },
         scopes: ['read', 'write']
       });
 
       const bearerAuth = createAuthScheme({
-        name: 'bearer' as const,
+        name: 'bearer',
         validate: mockValidate
       });
 
@@ -297,7 +300,7 @@ describe('Authentication System', () => {
 
     it('should handle auth validation errors gracefully', async () => {
       const faultyAuth = createAuthScheme({
-        name: 'bearer' as const,
+        name: 'bearer',
         validate: async (req: express.Request) => {
           throw new Error('Auth service unavailable');
         }
@@ -332,7 +335,7 @@ describe('Authentication System', () => {
   describe('auth extraction', () => {
     it('should extract bearer token from Authorization header', async () => {
       const bearerAuth = createAuthScheme({
-        name: 'bearer' as const,
+        name: 'bearer',
         validate: async (req: express.Request) => {
           const authHeader = req.headers.authorization;
           const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : '';
@@ -360,7 +363,7 @@ describe('Authentication System', () => {
 
     it('should extract API key from custom header', async () => {
       const apiKeyAuth = createAuthScheme({
-        name: 'apiKey' as const,
+        name: 'apiKey',
         validate: async (req: express.Request) => {
           const key = req.headers['x-custom-key'] as string;
           expect(key).toBe('custom-key-value');
@@ -387,7 +390,7 @@ describe('Authentication System', () => {
 
     it('should support custom extraction logic', async () => {
       const customAuth = createAuthScheme({
-        name: 'custom' as const,
+        name: 'custom',
         validate: async (req: express.Request) => {
           // Custom extraction from multiple sources
           const value = req.headers['x-signature'] as string || req.query.token as string;

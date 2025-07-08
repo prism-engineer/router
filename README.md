@@ -349,7 +349,7 @@ Define reusable authentication schemes and use them in routes:
 import { createAuthScheme } from '@prism-engineer/router/createAuthScheme';
 
 export const bearerAuth = createAuthScheme({
-  name: 'bearer' as const,
+  name: 'bearer',
   validate: async (req: express.Request) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -362,7 +362,7 @@ export const bearerAuth = createAuthScheme({
 });
 
 export const apiKeyAuth = createAuthScheme({
-  name: 'apiKey' as const,
+  name: 'apiKey',
   validate: async (req: express.Request) => {
     const key = req.headers['x-api-key'] as string;
     if (key) {
@@ -429,11 +429,20 @@ export const flexibleRoute = createApiRoute({
 The `req.auth` object now has a strongly-typed structure that preserves both the authentication scheme name and the validated result:
 
 ```typescript
-// req.auth structure
+// req.auth structure (for single auth scheme)
 {
-  name: string,                          // The name you gave your auth scheme
+  name: 'your-scheme-name',              // Literal type of your auth scheme name
   context: <YourValidateReturnType>      // Exactly what your validate function returns
 }
+
+// req.auth structure (for multiple auth schemes - union type)
+{
+  name: 'scheme1',
+  context: <Scheme1ValidateReturnType>
+} | {
+  name: 'scheme2', 
+  context: <Scheme2ValidateReturnType>
+} | ...
 ```
 
 **Key Features:**
@@ -445,7 +454,7 @@ The `req.auth` object now has a strongly-typed structure that preserves both the
 **Example with Custom Return Types:**
 ```typescript
 const customAuth = createAuthScheme({
-  name: 'custom-jwt' as const,
+  name: 'custom-jwt',
   validate: async (req: express.Request) => {
     // Access any part of the request
     const token = req.headers.authorization?.replace('Bearer ', '') || 
@@ -470,6 +479,26 @@ const route = createApiRoute({
     const permissions: string[] = req.auth.context.permissions;
     const schemeName: 'custom-jwt' = req.auth.name;
     // ...
+  }
+});
+
+// Multiple auth schemes create union types
+const multiAuthRoute = createApiRoute({
+  path: '/api/multi',
+  method: 'GET',
+  auth: [bearerAuth, apiKeyAuth], // Union of different schemes
+  handler: async (req) => {
+    // req.auth is union type with proper discrimination
+    if (req.auth.name === 'bearer') {
+      // TypeScript knows this is bearer auth result
+      const user = req.auth.context.user; // Typed correctly
+      const scopes = req.auth.context.scopes;
+    } else if (req.auth.name === 'apiKey') {
+      // TypeScript knows this is API key auth result  
+      const client = req.auth.context.client; // Typed correctly
+      const scopes = req.auth.context.scopes;
+    }
+    // Full type safety with literal string discrimination!
   }
 });
 ```

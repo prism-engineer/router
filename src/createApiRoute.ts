@@ -45,7 +45,7 @@ export type CreateApiRoute = <
   TRequestQuery extends TSchema | never = never,
   TRequestHeaders extends TObject<{ [K in string]: TString | TLiteral<string> | TUnion<(TString | TLiteral<string>)[]> }> | never = never,
   TResponse extends GenericResponseSchema | never = never,
-  TAuth extends BaseAuthScheme<string, any> | BaseAuthScheme<string, any>[] | never = never
+  TAuth extends BaseAuthScheme<string, any> | readonly BaseAuthScheme<string, any>[] | never = never
 >(config: {
   path: TPath;
   method: TMethod;
