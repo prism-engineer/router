@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Express, Response } from 'express';
 import { TSchema, Static } from '@sinclair/typebox';
 
 export type IsUnknown<T> = T extends unknown ? true : false;
@@ -40,7 +40,7 @@ export interface RouteConfig<
 }
 
 export interface RouterInterface {
-  app: any; // Express app instance
+  app: Express;
   loadRoutes(directory: string, pattern: RegExp): Promise<void>;
   registerRoute(route: any): void;
   compile(config: CompilationConfig): Promise<void>;

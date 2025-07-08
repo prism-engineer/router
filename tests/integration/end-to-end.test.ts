@@ -58,10 +58,10 @@ describe('End-to-End Integration', () => {
       // Step 1: Create actual route files
       const projectRoot = path.resolve(__dirname, '../..');
       const usersRouteFile = `
-import { createApiRoute } from '${projectRoot}/src/createApiRoute';
-import { Type } from '@sinclair/typebox';
+const { createApiRoute } = require('${projectRoot}/dist/createApiRoute.js');
+const { Type } = require('${projectRoot}/node_modules/@sinclair/typebox');
 
-export const getUsersRoute = createApiRoute({
+const getUsersRoute = createApiRoute({
   path: '/api/users',
   method: 'GET',
   request: {
@@ -98,7 +98,7 @@ export const getUsersRoute = createApiRoute({
   }
 });
 
-export const createUserRoute = createApiRoute({
+const createUserRoute = createApiRoute({
   path: '/api/users',
   method: 'POST',
   request: {
@@ -129,13 +129,15 @@ export const createUserRoute = createApiRoute({
       }
     };
   }
-});`;
+});
+
+module.exports = { getUsersRoute, createUserRoute };`;
 
       const userDetailsRouteFile = `
-import { createApiRoute } from '${projectRoot}/src/createApiRoute';
-import { Type } from '@sinclair/typebox';
+const { createApiRoute } = require('${projectRoot}/dist/createApiRoute.js');
+const { Type } = require('${projectRoot}/node_modules/@sinclair/typebox');
 
-export const getUserRoute = createApiRoute({
+const getUserRoute = createApiRoute({
   path: '/api/users/{userId}',
   method: 'GET',
   response: {
@@ -180,14 +182,16 @@ export const getUserRoute = createApiRoute({
       }
     };
   }
-});`;
+});
+
+module.exports = { getUserRoute };`;
 
       // Write route files
-      await fs.writeFile(path.join(routesDir, 'users.ts'), usersRouteFile);
-      await fs.writeFile(path.join(routesDir, 'user-details.ts'), userDetailsRouteFile);
+      await fs.writeFile(path.join(routesDir, 'users.js'), usersRouteFile);
+      await fs.writeFile(path.join(routesDir, 'user-details.js'), userDetailsRouteFile);
 
       // Step 2: Use router.loadRoutes() to load the actual files
-      await router.loadRoutes(routesDir, /.*\.ts$/);
+      await router.loadRoutes(routesDir, /.*\.js$/);
 
       // Step 3: Start HTTP server
       server = app.listen(0);
@@ -248,7 +252,7 @@ export const getUserRoute = createApiRoute({
         baseUrl,
         routes: {
           directory: routesDir,
-          pattern: /.*\.ts$/
+          pattern: /.*\.js$/
         }
       };
 
@@ -281,7 +285,7 @@ export const getUserRoute = createApiRoute({
       expect(clientContent.length).toBeGreaterThan(100);
     });
 
-    it('should handle multiple route patterns and complex APIs', async () => {
+    it.only('should handle multiple route patterns and complex APIs', async () => {
       // Create more complex route structure
       const projectRoot = path.resolve(__dirname, '../..');
       const apiV1Dir = path.join(routesDir, 'api', 'v1');
@@ -291,10 +295,10 @@ export const getUserRoute = createApiRoute({
 
       // V1 API routes
       const v1RouteFile = `
-import { createApiRoute } from '${projectRoot}/src/createApiRoute';
-import { Type } from '@sinclair/typebox';
+const { createApiRoute } = require('${projectRoot}/dist/createApiRoute.js');
+const { Type } = require('${projectRoot}/node_modules/@sinclair/typebox');
 
-export const v1UsersRoute = createApiRoute({
+const v1UsersRoute = createApiRoute({
   path: '/api/v1/users',
   method: 'GET',
   response: {
@@ -312,19 +316,21 @@ export const v1UsersRoute = createApiRoute({
     return {
       status: 200,
       body: {
-        version: 'v1' as const,
+        version: 'v1',
         users: [{ id: 1, name: 'V1 User' }]
       }
     };
   }
-});`;
+});
+
+module.exports = { v1UsersRoute };`;
 
       // V2 API routes
       const v2RouteFile = `
-import { createApiRoute } from '${projectRoot}/src/createApiRoute';
-import { Type } from '@sinclair/typebox';
+const { createApiRoute } = require('${projectRoot}/dist/createApiRoute.js');
+const { Type } = require('${projectRoot}/node_modules/@sinclair/typebox');
 
-export const v2UsersRoute = createApiRoute({
+const v2UsersRoute = createApiRoute({
   path: '/api/v2/users',
   method: 'GET',
   request: {
@@ -364,7 +370,7 @@ export const v2UsersRoute = createApiRoute({
     return {
       status: 200,
       body: {
-        version: 'v2' as const,
+        version: 'v2',
         users: [{
           id: 1,
           name: 'V2 User',
@@ -375,14 +381,16 @@ export const v2UsersRoute = createApiRoute({
       }
     };
   }
-});`;
+});
 
-      await fs.writeFile(path.join(apiV1Dir, 'users.ts'), v1RouteFile);
-      await fs.writeFile(path.join(apiV2Dir, 'users.ts'), v2RouteFile);
+module.exports = { v2UsersRoute };`;
+
+      await fs.writeFile(path.join(apiV1Dir, 'users.js'), v1RouteFile);
+      await fs.writeFile(path.join(apiV2Dir, 'users.js'), v2RouteFile);
 
       // Load routes with different patterns
-      await router.loadRoutes(path.join(routesDir, 'api', 'v1'), /.*\.ts$/);
-      await router.loadRoutes(path.join(routesDir, 'api', 'v2'), /.*\.ts$/);
+      await router.loadRoutes(path.join(routesDir, 'api', 'v1'), /.*\.js$/);
+      await router.loadRoutes(path.join(routesDir, 'api', 'v2'), /.*\.js$/);
 
       // Start server
       server = app.listen(0);
@@ -423,7 +431,7 @@ export const v2UsersRoute = createApiRoute({
         baseUrl: `http://localhost:${port}`,
         routes: {
           directory: routesDir,
-          pattern: /.*\.ts$/
+          pattern: /.*\.js$/
         }
       };
 
@@ -452,14 +460,15 @@ export const v2UsersRoute = createApiRoute({
       // Create invalid route file
       const invalidRouteFile = `
 // This is not a valid route file
-export const badRoute = "not a route";
+const badRoute = "not a route";
+module.exports = { badRoute };
 `;
 
-      await fs.writeFile(path.join(routesDir, 'invalid.ts'), invalidRouteFile);
+      await fs.writeFile(path.join(routesDir, 'invalid.js'), invalidRouteFile);
 
       // This should handle the error gracefully (current implementation continues despite parse errors)
       await expect(
-        router.loadRoutes(routesDir, /.*\.ts$/)
+        router.loadRoutes(routesDir, /.*\.js$/)
       ).resolves.not.toThrow();
     });
   });

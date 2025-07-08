@@ -3,6 +3,7 @@ import { RouterInterface, CompilationConfig } from './core/types';
 import { createFileRouteLoader } from './routing/loader';
 import { createCompiler } from './compilation/compiler';
 import { createRouteParser, ParsedRoute } from './routing/parser';
+import { validateAuth } from './createAuthScheme';
 
 export const createRouter = (): RouterInterface => {
   const app: Express = express();
@@ -45,20 +46,43 @@ export const createRouter = (): RouterInterface => {
       // Convert path params from {param} to :param format for Express
       const expressPath = route.path.replace(/{(\w+)}/g, ':$1');
       
+      console.log("ABOUT TO REGISTER ROUTE", route.method, expressPath)
+      
+      // Create middleware array
+      const middleware: any[] = [];
+      
+      // Add auth middleware if auth is defined
+      if (route.auth) {
+        middleware.push(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+          try {
+            const authContext = await validateAuth(route.auth, req);
+            (req as any).auth = authContext;
+            next();
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+            res.status(401).json({ error: errorMessage });
+          }
+        });
+      }
+      
+      // Add main handler
+      middleware.push(async (req: express.Request, res: express.Response) => {
+        try {
+          const result = await route.handler(req as any);
+          if (result && typeof result === 'object' && 'status' in result) {
+            res.status(result.status).json(result.body);
+          }
+        } catch (error) {
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
+      
       // Register the route with Express
       app[route.method.toLowerCase() as keyof express.Application](
         expressPath,
-        async (req: express.Request, res: express.Response) => {
-          try {
-            const result = await route.handler(req as any);
-            if (result && typeof result === 'object' && 'status' in result) {
-              res.status(result.status).json(result.body);
-            }
-          } catch (error) {
-            res.status(500).json({ error: 'Internal server error' });
-          }
-        }
+        ...middleware
       );
+      console.log("REGISTERED ROUTE", route.method, expressPath)
     },
     async compile(config: CompilationConfig): Promise<void> {
       if (!config) {
@@ -82,3 +106,4 @@ export const createRouter = (): RouterInterface => {
 export const router = createRouter();
 
 export { createApiRoute } from './createApiRoute';
+export { createAuthScheme } from './createAuthScheme';

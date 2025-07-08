@@ -340,26 +340,114 @@ const result = await client.api.protected.get({
 
 #### Authentication
 
-Add authentication requirements to routes:
+Define reusable authentication schemes and use them in routes:
+
+**Step 1: Define Authentication Schemes**
 
 ```typescript
-// Route definition
-export const secureRoute = createApiRoute({
-  path: '/api/secure',
+// auth/schemes.ts
+import { createAuthScheme } from '@prism-engineer/router/createAuthScheme';
+
+export const bearerAuth = createAuthScheme({
+  type: 'bearer',
+  validate: async (token: string) => {
+    const user = await validateJWT(token);
+    return { user, scopes: user.permissions };
+  }
+});
+
+export const apiKeyAuth = createAuthScheme({
+  type: 'apiKey',
+  in: 'header',
+  name: 'x-api-key',
+  validate: async (key: string) => {
+    const client = await validateApiKey(key);
+    return { client, scopes: ['read', 'write'] };
+  }
+});
+```
+
+**Step 2: Use Auth Schemes in Routes**
+
+```typescript
+// api/users.ts
+import { bearerAuth } from '../auth/schemes';
+
+export const getUsersRoute = createApiRoute({
+  path: '/api/users',
   method: 'GET',
+  auth: bearerAuth, // Single auth scheme
   response: {
     200: {
-      body: Type.Object({
-        data: Type.String()
-      })
+      body: Type.Array(Type.Object({
+        id: Type.Number(),
+        name: Type.String()
+      }))
     }
   },
   handler: async (req) => {
-    // Path parameters are automatically extracted and typed
+    // req.auth contains validated auth context
+    const { user } = req.auth;
     return {
       status: 200 as const,
-      body: { data: 'Secret information' }
+      body: [{ id: 1, name: 'John' }]
     };
+  }
+});
+
+// Multiple auth schemes (OR logic)
+export const flexibleRoute = createApiRoute({
+  path: '/api/flexible',
+  method: 'GET',
+  auth: [bearerAuth, apiKeyAuth], // Either bearer OR API key
+  handler: async (req) => {
+    return { status: 200 as const, body: { success: true } };
+  }
+});
+```
+
+**Step 3: Client Authentication**
+
+The generated client automatically handles authentication:
+
+```typescript
+import { createApiClient } from './generated/ApiClient.generated';
+
+// Initialize client with auth schemes
+const client = createApiClient('http://localhost:3000', {
+  auth: {
+    bearer: () => localStorage.getItem('token'),
+    apiKey: 'your-api-key'
+  }
+});
+
+// Auth headers automatically added to protected endpoints
+const users = await client.api.users.get(); // Adds Bearer header
+const data = await client.api.flexible.get(); // Adds appropriate auth header
+```
+
+**Advanced Authentication Patterns**
+
+```typescript
+// Dynamic token management
+const client = createApiClient(baseUrl, {
+  auth: {
+    bearer: {
+      getToken: () => authStore.getAccessToken(),
+      onUnauthorized: async () => {
+        await authStore.refreshToken();
+        return authStore.getAccessToken();
+      }
+    }
+  }
+});
+
+// Multiple auth schemes for different endpoint types
+const client = createApiClient(baseUrl, {
+  auth: {
+    bearer: userToken,      // For user endpoints
+    apiKey: serviceKey,     // For service endpoints
+    oauth: oauthToken       // For OAuth endpoints
   }
 });
 ```

@@ -1,1 +1,0 @@
-{"version":3,"file":"loader.d.ts","sourceRoot":"","sources":["../../src/routing/loader.ts"],"names":[],"mappings":"AAIA,MAAM,WAAW,WAAW;IAC1B,UAAU,CAAC,SAAS,EAAE,MAAM,EAAE,OAAO,EAAE,MAAM,GAAG,OAAO,CAAC,MAAM,EAAE,CAAC,CAAC;CACnE;AAED,eAAO,MAAM,qBAAqB,QAAO,WA0DxC,CAAC"}
