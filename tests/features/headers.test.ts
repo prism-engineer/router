@@ -32,6 +32,7 @@ describe('Headers', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String()
             })
@@ -63,6 +64,7 @@ describe('Headers', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               data: Type.Array(Type.Any())
             })
@@ -101,6 +103,7 @@ describe('Headers', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               fileId: Type.String(),
               url: Type.String()
@@ -132,6 +135,7 @@ describe('Headers', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Array(Type.Object({
               id: Type.Number(),
               name: Type.String()
@@ -173,6 +177,7 @@ describe('Headers', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String()
             })
@@ -206,6 +211,7 @@ describe('Headers', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               received: Type.Boolean()
             })

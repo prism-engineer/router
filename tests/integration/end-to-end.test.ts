@@ -72,6 +72,7 @@ const getUsersRoute = createApiRoute({
   },
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Array(Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -109,6 +110,7 @@ const createUserRoute = createApiRoute({
   },
   response: {
     201: {
+      contentType: 'application/json',
       body: Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -142,6 +144,7 @@ const getUserRoute = createApiRoute({
   method: 'GET',
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -153,6 +156,7 @@ const getUserRoute = createApiRoute({
       })
     },
     404: {
+      contentType: 'application/json',
       body: Type.Object({
         error: Type.String()
       })
@@ -303,6 +307,7 @@ const v1UsersRoute = createApiRoute({
   method: 'GET',
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         version: Type.Literal('v1'),
         users: Type.Array(Type.Object({
@@ -340,6 +345,7 @@ const v2UsersRoute = createApiRoute({
   },
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         version: Type.Literal('v2'),
         users: Type.Array(Type.Object({
@@ -352,6 +358,7 @@ const v2UsersRoute = createApiRoute({
       })
     },
     401: {
+      contentType: 'application/json',
       body: Type.Object({
         error: Type.String()
       })

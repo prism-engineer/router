@@ -68,6 +68,7 @@ describe('Client Generation Integration', () => {
           },
           response: {
             200: {
+              contentType: 'application/json',
               body: Type.Array(Type.Object({
                 id: Type.Number(),
                 name: Type.String(),
@@ -98,6 +99,7 @@ describe('Client Generation Integration', () => {
           },
           response: {
             201: {
+              contentType: 'application/json',
               body: Type.Object({
                 id: Type.Number(),
                 name: Type.String(),
@@ -123,6 +125,7 @@ describe('Client Generation Integration', () => {
           method: 'GET',
           response: {
             200: {
+              contentType: 'application/json',
               body: Type.Object({
                 id: Type.Number(),
                 name: Type.String(),
@@ -130,6 +133,7 @@ describe('Client Generation Integration', () => {
               })
             },
             404: {
+              contentType: 'application/json',
               body: Type.Object({
                 error: Type.String()
               })
@@ -209,6 +213,7 @@ describe('Client Generation Integration', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String(),
               timestamp: Type.Number()

@@ -6,6 +6,7 @@ export const helloRoute = createApiRoute({
   method: 'GET',
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         message: Type.String()
       })

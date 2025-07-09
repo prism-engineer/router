@@ -26,6 +26,7 @@ describe('Path Parameters', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.Number(),
               name: Type.String(),
@@ -52,6 +53,7 @@ describe('Path Parameters', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.Number(),
               title: Type.String(),
@@ -78,6 +80,7 @@ describe('Path Parameters', () => {
           method: 'GET',
           response: {
             200: {
+              contentType: 'application/json',
               body: Type.Object({
                 id: Type.Number(),
                 name: Type.String()
@@ -103,6 +106,7 @@ describe('Path Parameters', () => {
           },
           response: {
             200: {
+              contentType: 'application/json',
               body: Type.Object({
                 id: Type.Number(),
                 name: Type.String(),
@@ -124,6 +128,7 @@ describe('Path Parameters', () => {
           method: 'DELETE',
           response: {
             200: {
+              contentType: 'application/json',
               body: Type.Object({
                 success: Type.Boolean()
               })
@@ -150,6 +155,7 @@ describe('Path Parameters', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.Number(),
               name: Type.String(),

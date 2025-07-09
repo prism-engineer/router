@@ -1,7 +1,6 @@
 import { Static, TLiteral, TNumber, TObject, TSchema, TString, TUnion, Type } from '@sinclair/typebox';
-import { RouteConfig } from './core/types';
-import { BaseAuthScheme, AuthContext, ExtractAuthResultFromSchemes } from './createAuthScheme';
-import express from 'express';
+import { BaseAuthScheme, ExtractAuthResultFromSchemes } from './createAuthScheme';
+import type { Response } from 'express';
 
 type Expand<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;
 
@@ -14,65 +13,59 @@ type ExtractPathParams<TPath extends string> =
 
 type IsNever<T> = [T] extends [never] ? true : false;
 
-type HandlerOutput<TResponse extends GenericResponseSchema> = {
+type HandlerOutput<TResponse extends GenericResponseSchema> = TResponse extends any ? {
   [K in keyof TResponse]: 
-    // JSON content type with body schema
     TResponse[K] extends { contentType: JsonContentType; body: infer TBody }
       ? TBody extends TSchema
         ? { status: K extends number ? K : never; body: Static<TBody> }
         : never
-    // Custom content type (non-JSON)
-    : TResponse[K] extends { contentType: string; body?: never }
-      ? { status: K extends number ? K : never; custom: (res: express.Response) => void }
-    // Backward compatibility: body without contentType (assume JSON)
-    : TResponse[K] extends { body: infer TBody }
-      ? TBody extends TSchema
-        ? { status: K extends number ? K : never; body: Static<TBody> }
-        : never
+    : TResponse[K] extends { contentType: string; body?: never}
+      ? { 
+          status: K extends number ? K : never; 
+          custom: (res: Response<any, Record<string, any>>) => void;
+        }
     : never
-}[keyof TResponse]
+}[keyof TResponse] : never;
 
 type HandlerReturnType<TResponse extends GenericResponseSchema | never> =
   IsNever<TResponse> extends true ? Promise<void> :
     Promise<HandlerOutput<TResponse extends GenericResponseSchema ? TResponse : never>>;
 
-// JSON-like content types that support TypeBox schemas
 type JsonContentType = 
   | 'application/json'
   | 'application/vnd.api+json'
   | 'application/ld+json'
   | 'text/json';
 
-// Response schema that supports both JSON and custom content types
-type ResponseSchemaEntry = 
-  | {
+type GenericResponseSchema =  {
+  [K in number]: (
+    {
       contentType: JsonContentType;
       body: TSchema;
-      headers?: TObject<{ [K in string]: TString }>;
+    } | {
+      contentType: string;
     }
-  | {
-      contentType: string; // Any content type (custom)
-      body?: never; // No body schema for custom content types
-      headers?: TObject<{ [K in string]: TString }>;
-    }
-  | {
-      // Backward compatibility: body without contentType (assume JSON)
-      body: TSchema;
-      headers?: TObject<{ [K in string]: TString }>;
-    };
+  )
+}
 
-type GenericResponseSchema = {
-  [K in number]: ResponseSchemaEntry;
-};
+type TransformResponseSchemaToOutput<TResponse extends GenericResponseSchema> = Expand<{
+  [K in keyof TResponse]: TResponse[K extends number ? K : never]['contentType'] extends JsonContentType ? {
+    status: K extends number ? K : never,
+    body: Static<TResponse[K] extends { body: infer TBody } ? TBody extends TSchema ? TBody : never : never>
+  } : {
+    status: K extends number ? K : never,
+    custom: (res: Response<any, Record<string, any>>) => void
+  }
+}[keyof TResponse]>
 
-export type CreateApiRoute = <
+export const createApiRoute = <
   TPath extends string,
   TMethod extends 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'HEAD',
   TRequestBody extends TSchema | never = never,
   TRequestQuery extends TSchema | never = never,
   TRequestHeaders extends TObject<{ [K in string]: TString | TLiteral<string> | TUnion<(TString | TLiteral<string>)[]> }> | never = never,
   TResponse extends GenericResponseSchema | never = never,
-  TAuth extends BaseAuthScheme<string, any> | readonly BaseAuthScheme<string, any>[] | never = never
+  TAuth extends BaseAuthScheme<string, any> | readonly BaseAuthScheme<string, any>[] | never = never,
 >(config: {
   path: TPath;
   method: TMethod;
@@ -89,26 +82,7 @@ export type CreateApiRoute = <
     headers: IsNever<TRequestHeaders> extends true ? {} : Static<TRequestHeaders>;
     params: ExtractPathParams<TPath>;
     auth: IsNever<TAuth> extends true ? never : ExtractAuthResultFromSchemes<TAuth>;
-  }) => HandlerReturnType<TResponse>
+  }) => Promise<TransformResponseSchemaToOutput<TResponse>>
 }) => {
-  path: TPath;
-  method: TMethod;
-  request?: {
-    body?: TRequestBody;
-    query?: TRequestQuery;
-    headers?: TRequestHeaders;
-  };
-  response?: TResponse,
-  auth?: TAuth;
-  handler: (req: {
-    body: IsNever<TRequestBody> extends true ? {} : Static<TRequestBody>;
-    query: IsNever<TRequestQuery> extends true ? {} : Static<TRequestQuery>;
-    headers: IsNever<TRequestHeaders> extends true ? {} : Static<TRequestHeaders>;
-    params: ExtractPathParams<TPath>;
-    auth: IsNever<TAuth> extends true ? never : ExtractAuthResultFromSchemes<TAuth>;
-  }) => HandlerReturnType<TResponse>
-};
-
-export const createApiRoute: CreateApiRoute = (config) => {
   return config;
 }

@@ -30,6 +30,7 @@ describe('Handler Execution', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               processed: Type.Boolean(),
               data: Type.Object({
@@ -100,6 +101,7 @@ describe('Handler Execution', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               query: Type.String(),
               page: Type.Number(),
@@ -163,6 +165,7 @@ describe('Handler Execution', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               userId: Type.String(),
               postId: Type.String(),
@@ -223,6 +226,7 @@ describe('Handler Execution', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               authorized: Type.Boolean(),
               version: Type.String(),
@@ -230,6 +234,7 @@ describe('Handler Execution', () => {
             })
           },
           401: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })
@@ -326,15 +331,19 @@ describe('Handler Execution', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({ message: Type.String() })
           },
           201: {
+            contentType: 'application/json',
             body: Type.Object({ message: Type.String(), id: Type.Number() })
           },
           204: {
+            contentType: 'application/json',
             body: Type.Object({})
           },
           400: {
+            contentType: 'application/json',
             body: Type.Object({ error: Type.String() })
           }
         },
@@ -435,6 +444,7 @@ describe('Handler Execution', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               data: Type.String()
             }),
@@ -485,9 +495,11 @@ describe('Handler Execution', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({ message: Type.String() })
           },
           500: {
+            contentType: 'application/json',
             body: Type.Object({ error: Type.String() })
           }
         },
@@ -520,11 +532,13 @@ describe('Handler Execution', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               result: Type.Number()
             })
           },
           400: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String(),
               details: Type.String()
@@ -634,6 +648,7 @@ describe('Handler Execution', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               orderId: Type.String(),
               total: Type.Number(),
@@ -643,6 +658,7 @@ describe('Handler Execution', () => {
             })
           },
           400: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })

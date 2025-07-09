@@ -118,7 +118,7 @@ describe('Content Types Integration', () => {
             body: Type.Object({
               legacy: Type.Boolean()
             })
-          }
+          } as any // TODO: Support backward compatibility for routes without contentType
         },
         handler: async () => {
           return { 

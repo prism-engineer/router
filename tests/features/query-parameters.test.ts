@@ -33,6 +33,7 @@ describe('Query Parameters', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Array(Type.Object({
               id: Type.Number(),
               name: Type.String(),
@@ -66,6 +67,7 @@ describe('Query Parameters', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Array(Type.Object({
               id: Type.Number(),
               title: Type.String()
@@ -103,6 +105,7 @@ describe('Query Parameters', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Array(Type.Object({
               id: Type.Number(),
               name: Type.String(),
@@ -138,6 +141,7 @@ describe('Query Parameters', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Array(Type.Object({
               id: Type.Number(),
               name: Type.String()

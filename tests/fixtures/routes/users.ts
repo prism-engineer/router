@@ -12,6 +12,7 @@ export const createUserRoute = createApiRoute({
   },
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -40,6 +41,7 @@ export const getUsersRoute = createApiRoute({
   },
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Array(Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -61,6 +63,7 @@ export const getUserByIdRoute = createApiRoute({
   method: 'GET',
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         id: Type.Number(),
         name: Type.String(),

@@ -72,7 +72,7 @@ describe('Content Types', () => {
             body: Type.Object({
               message: Type.String()
             })
-          }
+          } as any // TODO: Support backward compatibility for routes without contentType
         },
         handler: async () => {
           return { status: 200 as const, body: { message: 'Legacy response' } };

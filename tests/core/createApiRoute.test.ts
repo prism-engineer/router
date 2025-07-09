@@ -25,6 +25,7 @@ describe('createApiRoute', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String()
             })
@@ -56,6 +57,7 @@ describe('createApiRoute', () => {
         },
         response: {
           201: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.Number(),
               name: Type.String(),
@@ -107,6 +109,7 @@ describe('createApiRoute', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.Number(),
               name: Type.String(),

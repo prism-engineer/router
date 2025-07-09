@@ -111,12 +111,14 @@ describe('Authentication System', () => {
         auth: bearerAuth,
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String(),
               userId: Type.Number()
             })
           },
           401: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })
@@ -191,6 +193,7 @@ describe('Authentication System', () => {
         auth: [bearerAuth, apiKeyAuth], // Either auth scheme works
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               authType: Type.String(),
               data: Type.String()
@@ -254,6 +257,7 @@ describe('Authentication System', () => {
         auth: bearerAuth,
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               user: Type.Object({
                 id: Type.Number(),
@@ -311,8 +315,8 @@ describe('Authentication System', () => {
         method: 'GET',
         auth: faultyAuth,
         response: {
-          200: { body: Type.Object({ success: Type.Boolean() }) },
-          401: { body: Type.Object({ error: Type.String() }) }
+          200: { contentType: 'application/json', body: Type.Object({ success: Type.Boolean() }) },
+          401: { contentType: 'application/json', body: Type.Object({ error: Type.String() }) }
         },
         handler: async () => ({
           status: 200 as const,
@@ -348,7 +352,7 @@ describe('Authentication System', () => {
         path: '/api/extract',
         method: 'GET',
         auth: bearerAuth,
-        response: { 200: { body: Type.Object({ success: Type.Boolean() }) } },
+        response: { 200: { contentType: 'application/json', body: Type.Object({ success: Type.Boolean() }) } },
         handler: async () => ({ status: 200 as const, body: { success: true } })
       });
 
@@ -375,7 +379,7 @@ describe('Authentication System', () => {
         path: '/api/custom-key',
         method: 'GET',
         auth: apiKeyAuth,
-        response: { 200: { body: Type.Object({ success: Type.Boolean() }) } },
+        response: { 200: { contentType: 'application/json', body: Type.Object({ success: Type.Boolean() }) } },
         handler: async () => ({ status: 200 as const, body: { success: true } })
       });
 
@@ -403,7 +407,7 @@ describe('Authentication System', () => {
         path: '/api/custom-extract',
         method: 'GET',
         auth: customAuth,
-        response: { 200: { body: Type.Object({ success: Type.Boolean() }) } },
+        response: { 200: { contentType: 'application/json', body: Type.Object({ success: Type.Boolean() }) } },
         handler: async () => ({ status: 200 as const, body: { success: true } })
       });
 

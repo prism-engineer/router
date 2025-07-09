@@ -52,6 +52,7 @@ describe('HTTP Server Integration', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               users: Type.Array(Type.Object({
                 id: Type.Number(),
@@ -125,6 +126,7 @@ describe('HTTP Server Integration', () => {
         },
         response: {
           201: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.Number(),
               name: Type.String(),
@@ -134,6 +136,7 @@ describe('HTTP Server Integration', () => {
             })
           },
           400: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String(),
               details: Type.Optional(Type.Array(Type.String()))
@@ -226,6 +229,7 @@ describe('HTTP Server Integration', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               userId: Type.String(),
               postId: Type.String(),
@@ -237,6 +241,7 @@ describe('HTTP Server Integration', () => {
             })
           },
           404: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })
@@ -309,6 +314,7 @@ describe('HTTP Server Integration', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String(),
               userId: Type.String()
@@ -319,6 +325,7 @@ describe('HTTP Server Integration', () => {
             })
           },
           401: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })
@@ -395,11 +402,13 @@ describe('HTTP Server Integration', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String()
             })
           },
           500: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })

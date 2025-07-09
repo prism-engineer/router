@@ -65,6 +65,7 @@ describe('Frontend Client Usage', () => {
         method: 'GET',
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               message: Type.String(),
               timestamp: Type.Number()
@@ -137,6 +138,7 @@ describe('Frontend Client Usage', () => {
         },
         response: {
           201: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.Number(),
               name: Type.String(),
@@ -145,6 +147,7 @@ describe('Frontend Client Usage', () => {
             })
           },
           400: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })
@@ -251,6 +254,7 @@ describe('Frontend Client Usage', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               users: Type.Array(Type.Object({
                 id: Type.Number(),
@@ -368,6 +372,7 @@ describe('Frontend Client Usage', () => {
         method: 'GET',
         response: {
           500: {
+            contentType: 'application/json',
             body: Type.Object({
               error: Type.String()
             })
@@ -408,6 +413,7 @@ describe('Frontend Client Usage', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               success: Type.Boolean()
             })
@@ -465,6 +471,7 @@ describe('Frontend Client Usage', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               id: Type.String(),
               user: Type.Object({
@@ -575,6 +582,7 @@ describe('Frontend Client Usage', () => {
         },
         response: {
           200: {
+            contentType: 'application/json',
             body: Type.Object({
               echo: Type.Object({
                 message: Type.String(),
@@ -710,7 +718,10 @@ describe('Frontend Client Usage', () => {
           path: '/api/users',
           method: 'GET',
           response: {
-            200: { body: Type.Array(Type.Object({ id: Type.Number() })) }
+            200: { 
+              contentType: 'application/json',
+              body: Type.Array(Type.Object({ id: Type.Number() }))
+            }
           },
           handler: async () => ({
             status: 200 as const,
@@ -721,7 +732,10 @@ describe('Frontend Client Usage', () => {
           path: '/api/posts',
           method: 'GET',
           response: {
-            200: { body: Type.Array(Type.Object({ id: Type.Number() })) }
+            200: { 
+              contentType: 'application/json',
+              body: Type.Array(Type.Object({ id: Type.Number() }))
+            }
           },
           handler: async () => ({
             status: 200 as const,
@@ -732,7 +746,10 @@ describe('Frontend Client Usage', () => {
           path: '/api/admin/settings',
           method: 'GET',
           response: {
-            200: { body: Type.Object({ value: Type.String() }) }
+            200: { 
+              contentType: 'application/json',
+              body: Type.Object({ value: Type.String() })
+            }
           },
           handler: async () => ({
             status: 200 as const,
