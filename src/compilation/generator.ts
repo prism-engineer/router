@@ -296,6 +296,19 @@ async function buildTypeSafeApiStructure(routes: any[]): Promise<string> {
   return generateApiStructureCode(structure, '      ');
 }
 
+// Helper function to determine if a property name needs quotes
+function needsQuotes(key: string): boolean {
+  // Check if the key is a valid JavaScript identifier
+  // Valid identifiers must start with a letter, underscore, or dollar sign
+  // and can contain letters, numbers, underscores, or dollar signs
+  return !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key);
+}
+
+// Helper function to format property name with quotes if needed
+function formatPropertyName(key: string): string {
+  return needsQuotes(key) ? `'${key}'` : key;
+}
+
 function generateApiStructureCode(structure: any, indent: string): string {
   let code = '';
   
@@ -303,20 +316,25 @@ function generateApiStructureCode(structure: any, indent: string): string {
     if (typeof value === 'object' && value !== null) {
       const valueObj = value as any;
       const methods = Object.keys(valueObj).filter(k => typeof valueObj[k] === 'string');
+      const nestedStructures = Object.keys(valueObj).filter(k => typeof valueObj[k] === 'object' && valueObj[k] !== null);
       
-      if (methods.length > 0) {
-        // This has method implementations
-        code += `${indent}${key}: {\n`;
+      if (methods.length > 0 || nestedStructures.length > 0) {
+        // This has method implementations and/or nested structures
+        code += `${indent}${formatPropertyName(key)}: {\n`;
+        
+        // Add methods first
         for (const method of methods) {
           // Replace escaped newlines with actual newlines and adjust indentation
           const methodCode = valueObj[method].replace(/\\n/g, '\n').replace(/^/gm, indent + '  ');
           code += `${indent}  ${methodCode},\n`;
         }
-        code += `${indent}},\n`;
-      } else {
-        // Nested structure
-        code += `${indent}${key}: {\n`;
-        code += generateApiStructureCode(valueObj, indent + '  ');
+        
+        // Add nested structures
+        for (const nestedKey of nestedStructures) {
+          const nestedStructure = { [nestedKey]: valueObj[nestedKey] };
+          code += generateApiStructureCode(nestedStructure, indent + '  ');
+        }
+        
         code += `${indent}},\n`;
       }
     }

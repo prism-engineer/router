@@ -5,6 +5,7 @@ import { createCompiler } from './compilation/compiler';
 import { createRouteParser, ParsedRoute } from './routing/parser';
 import { validateAuth } from './createAuthScheme';
 
+
 export const createRouter = (): RouterInterface => {
   const app: Express = express();
   const routes: ParsedRoute[] = [];
@@ -67,21 +68,28 @@ export const createRouter = (): RouterInterface => {
       middleware.push(async (req: express.Request, res: express.Response) => {
         try {
           const result = await route.handler(req as any);
+          const responseSchema = route.response?.[result.status];
           if (result && typeof result === 'object' && 'status' in result) {
             if ('custom' in result && typeof result.custom === 'function') {
               // Custom content type - user controls response
-              result.custom(res);
-            } else {
-              // JSON content type - auto-serialize
-              const responseSchema = route.response?.[result.status];
-              if (responseSchema?.contentType) {
-                res.setHeader('Content-Type', responseSchema.contentType);
+              res.status(result.status);
+              if(!responseSchema?.contentType) {
+                throw new Error('No content type specified for custom response handler');
               }
-              res.status(result.status).json(result.body);
+              res.setHeader('Content-Type', responseSchema?.contentType);
+              await result.custom(res);
+            } else {
+              res.status(result.status);
+              if(!responseSchema?.contentType) {
+                throw new Error('No content type specified for custom response handler');
+              }
+              res.setHeader('Content-Type', responseSchema?.contentType);
+              res.json(result.body);
             }
           }
         } catch (error) {
-          res.status(500).json({ error: 'Internal server error' });
+          res.setHeader('Content-Type', 'application/json');
+          res.status(500).json({ error: 'Internal server error' }).end();
         }
       });
       

@@ -108,40 +108,6 @@ describe('Content Types Integration', () => {
         }
       });
     });
-
-    it('should handle backward compatibility for responses without contentType', async () => {
-      const route = createApiRoute({
-        path: '/api/legacy-response',
-        method: 'GET',
-        response: {
-          200: {
-            body: Type.Object({
-              legacy: Type.Boolean()
-            })
-          } as any // TODO: Support backward compatibility for routes without contentType
-        },
-        handler: async () => {
-          return { 
-            status: 200 as const, 
-            body: { 
-              legacy: true 
-            } 
-          };
-        }
-      });
-
-      router.registerRoute(route);
-
-      const response = await request(app)
-        .get('/api/legacy-response')
-        .expect(200);
-
-      // Should default to application/json for backward compatibility
-      expect(response.headers['content-type']).toMatch(/application\/json/);
-      expect(response.body).toMatchObject({
-        legacy: true
-      });
-    });
   });
 
   describe('Custom Content Type Handling', () => {
@@ -341,7 +307,7 @@ describe('Content Types Integration', () => {
         handler: async () => {
           return { 
             status: 200 as const, 
-            custom: (res: express.Response) => {
+            custom: async (res: express.Response) => {
               throw new Error('Custom handler error');
             }
           };

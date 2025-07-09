@@ -27,7 +27,6 @@ export const createRouteParser = (): RouteParser => {
           moduleExports = require(resolvedPath.replace(/\.ts$|\.js$/, ''));
         }
       } catch (importError) {
-        console.error({importError})
         throw new Error(`Failed to parse route file ${filePath}: ${importError}`);
       }
       
