@@ -15,10 +15,13 @@ export const createRouter = (): RouterInterface => {
   const self = {
     app,
     async loadRoutes(directory: string, pattern: RegExp): Promise<void> {
+      if(!directory || !pattern) {
+        throw new Error('Directory and pattern are required');
+      }
+      
       try {
         const files = await routeLoader.loadRoutes(directory, pattern);
-        console.log(`Loading routes with pattern: ${pattern}`);
-        
+                
         // Parse each route file and extract route definitions
         for (const filePath of files) {
           try {

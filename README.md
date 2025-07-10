@@ -26,7 +26,7 @@ npm install @prism-engineer/router
 npm install @sinclair/typebox express
 ```
 
-**Note:** Both TypeBox and Express.js are required dependencies - TypeBox for defining route schemas with runtime validation and type safety, and Express.js as the underlying web framework.
+**Note:** Both TypeBox and Express.js are required dependencies - TypeBox for defining route schemas with runtime validation and type safety, and Express.js as the underlying web framework. Note that in the current version, TypeBox is actually included as a dependency, not a peer dependency.
 
 ## Quick Start
 
@@ -50,7 +50,7 @@ Create route files using the `createApiRoute` helper. **TypeBox is required** fo
 
 ```typescript
 // api/hello.ts - Simple GET route
-import { createApiRoute } from '@prism-engineer/router/createApiRoute';
+import { createApiRoute } from '@prism-engineer/router';
 import { Type } from '@sinclair/typebox';
 
 export const helloRoute = createApiRoute({
@@ -58,6 +58,7 @@ export const helloRoute = createApiRoute({
   method: 'GET',
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         message: Type.String()
       })
@@ -74,7 +75,7 @@ export const helloRoute = createApiRoute({
 
 ```typescript
 // api/users.ts - POST route with request body
-import { createApiRoute } from '@prism-engineer/router/createApiRoute';
+import { createApiRoute } from '@prism-engineer/router';
 import { Type } from '@sinclair/typebox';
 
 export const createUserRoute = createApiRoute({
@@ -88,6 +89,7 @@ export const createUserRoute = createApiRoute({
   },
   response: {
     201: {
+      contentType: 'application/json',
       body: Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -236,6 +238,7 @@ export const getUsersRoute = createApiRoute({
   },
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Array(Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -271,6 +274,7 @@ export const getUserByIdRoute = createApiRoute({
   method: 'GET',
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         id: Type.Number(),
         name: Type.String(),
@@ -313,6 +317,7 @@ export const protectedRoute = createApiRoute({
   },
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Object({
         message: Type.String()
       })
@@ -346,7 +351,8 @@ Define reusable authentication schemes and use them in routes:
 
 ```typescript
 // auth/schemes.ts
-import { createAuthScheme } from '@prism-engineer/router/createAuthScheme';
+import { createAuthScheme } from '@prism-engineer/router';
+import express from 'express';
 
 export const bearerAuth = createAuthScheme({
   name: 'bearer',
@@ -372,6 +378,10 @@ export const apiKeyAuth = createAuthScheme({
     throw new Error('Missing API key');
   }
 });
+
+// Placeholder functions for the example
+declare function validateJWT(token: string): Promise<{ id: string; permissions: string[] }>;
+declare function validateApiKey(key: string): Promise<{ id: string }>;
 ```
 
 **Step 2: Use Auth Schemes in Routes**
@@ -386,6 +396,7 @@ export const getUsersRoute = createApiRoute({
   auth: bearerAuth, // Single auth scheme
   response: {
     200: {
+      contentType: 'application/json',
       body: Type.Array(Type.Object({
         id: Type.Number(),
         name: Type.String()
@@ -473,14 +484,26 @@ const route = createApiRoute({
   path: '/api/custom',
   method: 'GET',
   auth: customAuth,
+  response: {
+    200: {
+      contentType: 'application/json',
+      body: Type.Object({
+        message: Type.String()
+      })
+    }
+  },
   handler: async (req) => {
     // req.auth.context is typed as { userId: string, permissions: string[] }
     const userId: string = req.auth.context.userId;
     const permissions: string[] = req.auth.context.permissions;
     const schemeName: 'custom-jwt' = req.auth.name;
     // ...
+    return { status: 200 as const, body: { message: 'Success' } };
   }
 });
+
+// Placeholder function for the example
+declare function verifyJWT(token: string): Promise<{ sub: string; scope: string }>;
 
 // Multiple auth schemes create union types
 const multiAuthRoute = createApiRoute({
@@ -526,16 +549,16 @@ const data = await client.api.flexible.get(); // Adds appropriate auth header
 **Advanced Authentication Patterns**
 
 ```typescript
-// Dynamic token management
+// Note: Advanced authentication patterns like getToken and onUnauthorized
+// are not currently implemented in the generated client code.
+// The generated client currently supports simple string tokens or functions
+// that return tokens.
+
+// Dynamic token management (not currently implemented)
 const client = createApiClient(baseUrl, {
   auth: {
-    bearer: {
-      getToken: () => authStore.getAccessToken(),
-      onUnauthorized: async () => {
-        await authStore.refreshToken();
-        return authStore.getAccessToken();
-      }
-    }
+    bearer: () => authStore.getAccessToken(),
+    apiKey: 'your-api-key'
   }
 });
 
@@ -599,6 +622,183 @@ handler: async (req) => {
   };
 }
 ```
+
+### Response Types
+
+The router supports two types of responses based on the `contentType` you specify:
+
+#### JSON Responses
+
+For JSON content types (`application/json`, `application/vnd.api+json`, `application/ld+json`, `text/json`), return a `body` object:
+
+```typescript
+export const jsonRoute = createApiRoute({
+  path: '/api/data',
+  method: 'GET',
+  response: {
+    200: {
+      contentType: 'application/json',
+      body: Type.Object({
+        message: Type.String(),
+        timestamp: Type.Number()
+      })
+    }
+  },
+  handler: async (req) => {
+    return {
+      status: 200 as const,
+      body: {
+        message: 'Hello, World!',
+        timestamp: Date.now()
+      }
+    };
+  }
+});
+```
+
+#### Custom Content Types
+
+For non-JSON content types (like `text/plain`, `text/html`, `image/png`, etc.), return a `custom` function that receives the Express response object:
+
+```typescript
+export const customRoute = createApiRoute({
+  path: '/api/download',
+  method: 'GET',
+  response: {
+    200: {
+      contentType: 'text/plain'
+    },
+    404: {
+      contentType: 'application/json',
+      body: Type.Object({
+        error: Type.String()
+      })
+    }
+  },
+  handler: async (req) => {
+    const data = await getFileData();
+    
+    if (!data) {
+      return {
+        status: 404 as const,
+        body: { error: 'File not found' }
+      };
+    }
+    
+    return {
+      status: 200 as const,
+      custom: (res) => {
+        res.setHeader('Content-Disposition', 'attachment; filename="data.txt"');
+        res.send(data);
+      }
+    };
+  }
+});
+
+// Example: Streaming response for large files or real-time data
+export const streamRoute = createApiRoute({
+  path: '/api/stream/{fileId}',
+  method: 'GET',
+  response: {
+    200: {
+      contentType: 'application/octet-stream'
+    },
+    404: {
+      contentType: 'application/json',
+      body: Type.Object({
+        error: Type.String()
+      })
+    }
+  },
+  handler: async (req) => {
+    const { fileId } = req.params;
+    const fileStream = await getFileStream(fileId);
+    
+    if (!fileStream) {
+      return {
+        status: 404 as const,
+        body: { error: 'File not found' }
+      };
+    }
+    
+    return {
+      status: 200 as const,
+      custom: (res) => {
+        res.setHeader('Content-Disposition', `attachment; filename="${fileId}"`);
+        res.setHeader('Transfer-Encoding', 'chunked');
+        
+        // Stream the file directly to the response
+        fileStream.pipe(res);
+        
+        // Handle stream errors
+        fileStream.on('error', (err) => {
+          console.error('Stream error:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'Stream error' });
+          }
+        });
+      }
+    };
+  }
+});
+
+// Example: Server-Sent Events (SSE) for real-time updates
+export const sseRoute = createApiRoute({
+  path: '/api/events',
+  method: 'GET',
+  response: {
+    200: {
+      contentType: 'text/event-stream'
+    }
+  },
+  handler: async (req) => {
+    return {
+      status: 200 as const,
+      custom: (res) => {
+        // Set SSE headers
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        
+        // Send initial connection message
+        res.write('data: {"type":"connected","timestamp":' + Date.now() + '}\n\n');
+        
+        // Set up interval to send periodic updates
+        const interval = setInterval(() => {
+          const data = {
+            type: 'update',
+            timestamp: Date.now(),
+            data: Math.random()
+          };
+          res.write(`data: ${JSON.stringify(data)}\n\n`);
+        }, 1000);
+        
+        // Clean up when client disconnects
+        req.on('close', () => {
+          clearInterval(interval);
+          console.log('SSE connection closed');
+        });
+        
+        // Handle errors
+        res.on('error', (err) => {
+          console.error('SSE error:', err);
+          clearInterval(interval);
+        });
+      }
+    };
+  }
+});
+
+// Placeholder functions for the examples
+declare function getFileData(): Promise<string | null>;
+declare function getFileStream(fileId: string): Promise<NodeJS.ReadableStream | null>;
+```
+
+**Key Points:**
+- **JSON responses**: Use `body` property with TypeBox schema validation
+- **Custom responses**: Use `custom` function for full control over the response
+- **Content-Type**: Automatically set by the framework based on your schema
+- **Mixed responses**: You can mix JSON and custom content types in the same route (different status codes)
 
 ## Complete Example
 
@@ -678,5 +878,5 @@ export default {
 
 - Package name: `@prism-engineer/router`
 - Type: Library package for Express.js applications
-- Current version: 0.0.1
+- Current version: 0.0.5
 - Node.js compatibility: >= 16.0.0

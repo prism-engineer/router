@@ -26,6 +26,21 @@ export type ExtractAuthResultFromSchemes<T> = T extends readonly (infer U)[]
     : never;
 
 export function createAuthScheme<const T extends BaseAuthScheme<string, any>>(config: T): T {
+  if(!config.name) {
+    throw new Error('name is required');
+  }
+
+  if(typeof config.name !== 'string') {
+    throw new Error('name must be a string');
+  }
+  
+  if(!config.validate) {
+    throw new Error('validate function is required');
+  }
+
+  if(typeof config.validate !== 'function') {
+    throw new Error('validate function must be a function');
+  }
   return config;
 }
 

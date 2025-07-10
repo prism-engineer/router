@@ -1,0 +1,16 @@
+// tsconfig.types.json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/tmp",      // temp folder just for .d.ts
+    "rootDir": "./src",
+
+    "declaration": true,
+    "emitDeclarationOnly": true, // ⬅️  no JS, just .d.ts
+
+    "declarationMap": false,     // maps aren’t helpful for the bundle
+    "sourceMap": false           // (omit; only affects JS)
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"]
+}

@@ -1,6 +1,6 @@
 {
   "name": "@prism-engineer/router",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Type-safe Express.js router with automatic client generation",
   "main": "dist/router.js",
   "types": "dist/router.d.ts",
@@ -41,8 +41,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json && chmod +x dist/cli/index.js",
-    "dev": "tsc --project tsconfig.build.json --watch",
+    "build": "npm run clean && tsc -p tsconfig.types.json && rollup -c rollup.d.ts.config.cjs && tsc -p tsconfig.build.json && chmod +x dist/cli/index.js",    "dev": "tsc --project tsconfig.build.json --watch",
     "clean": "rm -rf dist",
     "prepare": "npm run clean && npm run build",
     "typecheck": "tsc --noEmit",
@@ -55,15 +54,18 @@
   },
   "devDependencies": {
     "@types/supertest": "^6.0.3",
+    "@types/express": "^5.0.3",
+    "rollup": "^4.44.2",
+    "rollup-plugin-dts": "^6.2.1",
     "supertest": "^7.1.1",
+    "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.37",
     "@sinclair/typebox-codegen": "^0.11.1",
-    "@types/express": "^5.0.3",
-    "@types/node": "^24.0.10",
     "express": "^5.1.0",
+    "@types/node": "^24.0.10",
     "glob": "^11.0.3",
     "json-schema-to-typescript": "^15.0.4"
   }

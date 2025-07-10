@@ -13,24 +13,6 @@ type ExtractPathParams<TPath extends string> =
 
 type IsNever<T> = [T] extends [never] ? true : false;
 
-type HandlerOutput<TResponse extends GenericResponseSchema> = TResponse extends any ? {
-  [K in keyof TResponse]: 
-    TResponse[K] extends { contentType: JsonContentType; body: infer TBody }
-      ? TBody extends TSchema
-        ? { status: K extends number ? K : never; body: Static<TBody> }
-        : never
-    : TResponse[K] extends { contentType: string; body?: never}
-      ? { 
-          status: K extends number ? K : never; 
-          custom: (res: Response<any, Record<string, any>>) => void;
-        }
-    : never
-}[keyof TResponse] : never;
-
-type HandlerReturnType<TResponse extends GenericResponseSchema | never> =
-  IsNever<TResponse> extends true ? Promise<void> :
-    Promise<HandlerOutput<TResponse extends GenericResponseSchema ? TResponse : never>>;
-
 type JsonContentType = 
   | 'application/json'
   | 'application/vnd.api+json'
@@ -45,17 +27,21 @@ type GenericResponseSchema =  {
     } | {
       contentType: string;
     }
-  )
+  ) & ({
+    headers?: TObject<{ [K in string]: TString | TLiteral<string> | TUnion<(TString | TLiteral<string>)[]> }>
+  })
 }
 
 type TransformResponseSchemaToOutput<TResponse extends GenericResponseSchema> = Expand<{
-  [K in keyof TResponse]: TResponse[K extends number ? K : never]['contentType'] extends JsonContentType ? {
+  [K in keyof TResponse]: (TResponse[K extends number ? K : never]['contentType'] extends JsonContentType ? {
     status: K extends number ? K : never,
-    body: Static<TResponse[K] extends { body: infer TBody } ? TBody extends TSchema ? TBody : never : never>
+    body: Static<TResponse[K] extends { body: infer TBody } ? TBody extends TSchema ? TBody : never : never>;
   } : {
     status: K extends number ? K : never,
-    custom: (res: Response<any, Record<string, any>>) => void
-  }
+    custom: (res: Response<any, Record<string, any>>) => void;
+  }) &  (TResponse[K] extends { headers: infer THeaders } ? {
+    headers: Static<THeaders extends TSchema ? THeaders : never>;
+  } : {})
 }[keyof TResponse]>
 
 export const createApiRoute = <

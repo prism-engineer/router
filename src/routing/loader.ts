@@ -11,10 +11,7 @@ export const createFileRouteLoader = (): RouteLoader => {
     const matchedFiles: string[] = [];
     
     try {
-      console.log(`Reading directory ${dir}`);
       const entries = await fs.readdir(dir, { withFileTypes: true });
-
-      console.log(`Found ${entries.length} entries in ${dir}`);
       
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
@@ -34,8 +31,7 @@ export const createFileRouteLoader = (): RouteLoader => {
         }
       }
     } catch (error) {
-      // Handle permission errors or other filesystem issues
-      console.warn(`Could not read directory ${dir}: ${error}`);
+      throw error;
     }
     
     return matchedFiles;
@@ -46,9 +42,6 @@ export const createFileRouteLoader = (): RouteLoader => {
       // For RegExp patterns, we need to traverse the file system
       // Starting from current directory and matching files
       const files = await walkDirectory(directory, pattern);
-      if (files.length === 0) {
-        throw new Error(`No files found matching pattern: ${pattern}`);
-      }
       return files;
     } catch (error) {
       throw new Error(`Failed to load RegExp pattern: ${error}`);
