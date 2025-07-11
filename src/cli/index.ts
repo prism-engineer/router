@@ -4,21 +4,22 @@ import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { router } from '../router';
 
-interface CliConfig {
+export interface PrismCliConfig {
   outputDir: string;
   name: string;
   baseUrl: string;
   routes: {
     directory: string;
     pattern: RegExp;
-  };
+    options?: {
+      prefix?: string;
+    }
+  }[];
 }
 
-async function loadConfig(): Promise<CliConfig> {
+async function loadConfig(): Promise<PrismCliConfig> {
   const configPaths = [
-    'config.prism.router.ts',
     'config.prism.router.js',
-    'prism.config.ts',
     'prism.config.js'
   ];
 
@@ -33,6 +34,7 @@ async function loadConfig(): Promise<CliConfig> {
           const config = await import(fullPath);
           return config.default || config;
         } catch (tsError) {
+          console.log('tsError', tsError);
           // If TypeScript import fails, try requiring it (in case it's been compiled)
           try {
             delete require.cache[fullPath];
@@ -81,8 +83,13 @@ async function runCompile(): Promise<void> {
     console.log(`📁 Output directory: ${config.outputDir}`);
     console.log(`🏷️  Client name: ${config.name}`);
     console.log(`🌐 Base URL: ${config.baseUrl}`);
-    console.log(`📂 Routes directory: ${config.routes.directory}`);
-    console.log(`🔍 Pattern: ${config.routes.pattern}`);
+    for(const routeConfig of config.routes) {
+      console.log(`📂 Routes directory: ${routeConfig.directory}`);
+      console.log(`🔍 Pattern: ${routeConfig.pattern}`);
+      if(routeConfig.options?.prefix) {
+        console.log(`🔍 Prefix: ${routeConfig.options.prefix}`);
+      }
+    }
     
     console.log('\n⚡ Compiling API client...');
     await router.compile(config);

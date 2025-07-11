@@ -8,13 +8,19 @@ import { validateAuth } from './createAuthScheme';
 
 export const createRouter = (): RouterInterface => {
   const app: Express = express();
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  
   const routes: ParsedRoute[] = [];
   const routeLoader = createFileRouteLoader();
   const routeParser = createRouteParser();
 
   const self = {
     app,
-    async loadRoutes(directory: string, pattern: RegExp): Promise<void> {
+    async loadRoutes(directory: string, pattern: RegExp, options?: {
+      prefix?: string;
+    }): Promise<void> {
       if(!directory || !pattern) {
         throw new Error('Directory and pattern are required');
       }
@@ -32,7 +38,7 @@ export const createRouter = (): RouterInterface => {
             
             // Auto-register each route with Express
             for (const route of parsedRoutes) {
-              this.registerRoute(route);
+              this.registerRoute(route, options?.prefix);
             }
           } catch (parseError) {
             console.warn(`Failed to parse route file ${filePath}: ${parseError}`);
@@ -43,12 +49,12 @@ export const createRouter = (): RouterInterface => {
         throw new Error(`Failed to load routes: ${error}`);
       }
     },
-    registerRoute(route: any): void {
+    registerRoute(route: any, prefix?: string): void {
       // Store the route for client generation
       routes.push(route);
       
       // Convert path params from {param} to :param format for Express
-      const expressPath = route.path.replace(/{(\w+)}/g, ':$1');
+      const expressPath = prefix + route.path.replace(/{(\w+)}/g, ':$1');
       
       // Create middleware array
       const middleware: any[] = [];
@@ -56,43 +62,39 @@ export const createRouter = (): RouterInterface => {
       // Add auth middleware if auth is defined
       if (route.auth) {
         middleware.push(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-          try {
-            const authContext = await validateAuth(route.auth, req);
-            (req as any).auth = authContext;
-            next();
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-            res.status(401).json({ error: errorMessage });
-          }
+          const authContext = await validateAuth(route.auth, req);
+          (req as any).auth = authContext;
+          next();
         });
       }
       
       // Add main handler
       middleware.push(async (req: express.Request, res: express.Response) => {
-        try {
-          const result = await route.handler(req as any);
-          const responseSchema = route.response?.[result.status];
-          if (result && typeof result === 'object' && 'status' in result) {
-            if ('custom' in result && typeof result.custom === 'function') {
-              // Custom content type - user controls response
-              res.status(result.status);
-              if(!responseSchema?.contentType) {
-                throw new Error('No content type specified for custom response handler');
-              }
-              res.setHeader('Content-Type', responseSchema?.contentType);
-              await result.custom(res);
-            } else {
-              res.status(result.status);
-              if(!responseSchema?.contentType) {
-                throw new Error('No content type specified for custom response handler');
-              }
-              res.setHeader('Content-Type', responseSchema?.contentType);
-              res.json(result.body);
+        const result = await route.handler({
+          query: req.query,
+          body: req.body,
+          headers: req.headers,
+          params: req.params,
+          auth: (req as any).auth,
+        });
+        const responseSchema = route.response?.[result.status];
+        if (result && typeof result === 'object' && 'status' in result) {
+          if ('custom' in result && typeof result.custom === 'function') {
+            // Custom content type - user controls response
+            res.status(result.status);
+            if(!responseSchema?.contentType) {
+              throw new Error('No content type specified for custom response handler');
             }
+            res.setHeader('Content-Type', responseSchema?.contentType);
+            await result.custom(res);
+          } else {
+            res.status(result.status);
+            if(!responseSchema?.contentType) {
+              throw new Error('No content type specified for custom response handler');
+            }
+            res.setHeader('Content-Type', responseSchema?.contentType);
+            res.json(result.body);
           }
-        } catch (error) {
-          res.setHeader('Content-Type', 'application/json');
-          res.status(500).json({ error: 'Internal server error' }).end();
         }
       });
       
@@ -101,14 +103,21 @@ export const createRouter = (): RouterInterface => {
         expressPath,
         ...middleware
       );
+
+      console.log(`Registered route ${route.method} ${expressPath}`);
     },
-    async compile(config: CompilationConfig): Promise<void> {
+    async compile(config: CompilationConfig, loadRoutesOptions?: {
+      prefix?: string;
+    }): Promise<void> {
       if (!config) {
         throw new Error('Configuration is required');
       }
 
-      console.log(`Loading routes from ${config.routes.directory} with pattern ${config.routes.pattern}`);
-      await self.loadRoutes(config.routes.directory, config.routes.pattern);
+      for(const routeConfig of config.routes) {
+        console.log(`Loading routes from ${routeConfig.directory} with pattern ${routeConfig.pattern}`);
+        await self.loadRoutes(routeConfig.directory, routeConfig.pattern, routeConfig.options) ;
+      }
+
 
       const compiler = createCompiler();
       await compiler.compile(config, routes);
@@ -125,3 +134,4 @@ export const router = createRouter();
 
 export { createApiRoute } from './createApiRoute';
 export { createAuthScheme } from './createAuthScheme';
+export type { PrismCliConfig } from './cli/index';

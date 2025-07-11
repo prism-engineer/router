@@ -41,8 +41,10 @@ export interface RouteConfig<
 
 export interface RouterInterface {
   app: Express;
-  loadRoutes(directory: string, pattern: RegExp): Promise<void>;
-  registerRoute(route: any): void;
+  loadRoutes(directory: string, pattern: RegExp, options?: {
+    prefix?: string;
+  }): Promise<void>;
+  registerRoute(route: any, prefix?: string): void;
   compile(config: CompilationConfig): Promise<void>;
 }
 
@@ -53,5 +55,8 @@ export interface CompilationConfig {
   routes: {
     directory: string;
     pattern: RegExp;
-  }
+    options?: {
+      prefix?: string;
+    }
+  }[]
 }

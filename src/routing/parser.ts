@@ -20,12 +20,7 @@ export const createRouteParser = (): RouteParser => {
       let moduleExports: any;
 
       try {
-        // Use dynamic import for TypeScript files in test environment
-        if (resolvedPath.endsWith('.ts') && process.env.NODE_ENV === 'test') {
-          moduleExports = await import(resolvedPath);
-        } else {
-          moduleExports = require(resolvedPath.replace(/\.ts$|\.js$/, ''));
-        }
+        moduleExports = require(resolvedPath);
       } catch (importError) {
         throw new Error(`Failed to parse route file ${filePath}: ${importError}`);
       }

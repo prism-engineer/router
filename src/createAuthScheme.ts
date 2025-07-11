@@ -1,5 +1,3 @@
-import express from 'express';
-
 export interface AuthContext {
   user?: any;
   client?: any;
@@ -14,7 +12,7 @@ export type AuthResult<TScheme extends string, TContext> = {
 
 export interface BaseAuthScheme<TName extends string = string, TAuthContext = any> {
   name: TName;
-  validate: (req: express.Request) => Promise<TAuthContext>;
+  validate: (req: any) => Promise<TAuthContext>;
 }
 
 export type ExtractAuthResultFromSchemes<T> = T extends readonly (infer U)[] 
@@ -46,7 +44,7 @@ export function createAuthScheme<const T extends BaseAuthScheme<string, any>>(co
 
 export async function validateAuth<T extends BaseAuthScheme<string, any> | readonly BaseAuthScheme<string, any>[]>(
   schemes: T,
-  req: express.Request
+  req: any
 ): Promise<ExtractAuthResultFromSchemes<T>> {
   const schemesToTry = Array.isArray(schemes) ? schemes : [schemes];
   let lastError: any = null;

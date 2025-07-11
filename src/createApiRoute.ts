@@ -1,6 +1,5 @@
 import { Static, TLiteral, TNumber, TObject, TSchema, TString, TUnion, Type } from '@sinclair/typebox';
 import { BaseAuthScheme, ExtractAuthResultFromSchemes } from './createAuthScheme';
-import type { Response } from 'express';
 
 type Expand<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;
 
@@ -38,7 +37,7 @@ type TransformResponseSchemaToOutput<TResponse extends GenericResponseSchema> = 
     body: Static<TResponse[K] extends { body: infer TBody } ? TBody extends TSchema ? TBody : never : never>;
   } : {
     status: K extends number ? K : never,
-    custom: (res: Response<any, Record<string, any>>) => void;
+    custom: (res: any) => void;
   }) &  (TResponse[K] extends { headers: infer THeaders } ? {
     headers: Static<THeaders extends TSchema ? THeaders : never>;
   } : {})

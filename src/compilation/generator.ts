@@ -4,16 +4,22 @@ import * as Codegen from '@sinclair/typebox-codegen'
 import { compile } from 'json-schema-to-typescript'
 
 export interface ClientGenerator {
-  generateClient(config: CompilationConfig, routes: any[]): Promise<string>;
+  generateClient(options: {
+    name: string;
+    baseUrl: string;
+  }, routes: any[]): Promise<string>;
 }
 
 export const createTypeScriptClientGenerator = (): ClientGenerator => ({
-  async generateClient(config: CompilationConfig, routes: any[]): Promise<string> {
+  async generateClient(options: {
+    name: string;
+    baseUrl: string;
+  }, routes: any[]): Promise<string> {
     if (routes.length === 0) {
       throw new Error('No routes found');
     }
 
-    return await generateTypeSafeClient(config, routes);
+    return await generateTypeSafeClient(options, routes);
   }
 });
 
@@ -236,8 +242,11 @@ async function generateMethodImplementation(route: any): Promise<string> {
 }
 
 // Type-safe client generation
-async function generateTypeSafeClient(config: CompilationConfig, routes: any[]): Promise<string> {
-  const { name, baseUrl } = config;
+async function generateTypeSafeClient(options: {
+  name: string;
+  baseUrl: string;
+}, routes: any[]): Promise<string> {
+  const { name, baseUrl } = options;
   
   let clientCode = '';
   
