@@ -9,7 +9,12 @@ import { validateAuth } from './createAuthScheme';
 export const createRouter = (): RouterInterface => {
   const app: Express = express();
 
-  app.use(express.json());
+  app.use(express.json({
+    verify: (req, res, buf, encoding) => {
+      // buf is a Buffer of the raw request body
+      (req as any).rawBody = buf.toString(encoding as BufferEncoding || 'utf8');
+    }
+  }));
   app.use(express.urlencoded({ extended: true }));
   
   const routes: ParsedRoute[] = [];
@@ -32,7 +37,6 @@ export const createRouter = (): RouterInterface => {
         for (const filePath of files) {
           try {
             const parsedRoutes = await routeParser.parseRouteFile(filePath);
-            
             // Add parsed routes to our collection
             routes.push(...parsedRoutes);
             
@@ -69,13 +73,14 @@ export const createRouter = (): RouterInterface => {
       }
       
       // Add main handler
-      middleware.push(async (req: express.Request, res: express.Response) => {
+      middleware.push(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const result = await route.handler({
           query: req.query,
           body: req.body,
           headers: req.headers,
           params: req.params,
           auth: (req as any).auth,
+          rawRequest: req
         });
         const responseSchema = route.response?.[result.status];
         if (result && typeof result === 'object' && 'status' in result) {
@@ -83,19 +88,21 @@ export const createRouter = (): RouterInterface => {
             // Custom content type - user controls response
             res.status(result.status);
             if(!responseSchema?.contentType) {
-              throw new Error('No content type specified for custom response handler');
+              return next(new Error('No content type specified for custom response handler'));
             }
             res.setHeader('Content-Type', responseSchema?.contentType);
             await result.custom(res);
           } else {
             res.status(result.status);
             if(!responseSchema?.contentType) {
-              throw new Error('No content type specified for custom response handler');
+              return next(new Error('No content type specified for custom response handler'));
             }
             res.setHeader('Content-Type', responseSchema?.contentType);
             res.json(result.body);
           }
         }
+
+        next();
       });
       
       // Register the route with Express
@@ -103,8 +110,6 @@ export const createRouter = (): RouterInterface => {
         expressPath,
         ...middleware
       );
-
-      console.log(`Registered route ${route.method} ${expressPath}`);
     },
     async compile(config: CompilationConfig, loadRoutesOptions?: {
       prefix?: string;
@@ -113,16 +118,17 @@ export const createRouter = (): RouterInterface => {
         throw new Error('Configuration is required');
       }
 
-      for(const routeConfig of config.routes) {
-        console.log(`Loading routes from ${routeConfig.directory} with pattern ${routeConfig.pattern}`);
+      // Handle both single route config and array of route configs
+      const routeConfigs = Array.isArray(config.routes) ? config.routes : [config.routes];
+      
+      for(const routeConfig of routeConfigs) {
         await self.loadRoutes(routeConfig.directory, routeConfig.pattern, routeConfig.options) ;
       }
 
 
       const compiler = createCompiler();
       await compiler.compile(config, routes);
-      
-      console.log(`Compiling with config: ${JSON.stringify(config)}`);
+    
     }
   };
 

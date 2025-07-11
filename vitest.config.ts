@@ -7,16 +7,5 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test'
     },
-    coverage: {
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        'coverage/',
-        '**/*.d.ts',
-        '**/*.config.ts',
-        '**/*.config.js',
-      ],
-    },
   },
 });

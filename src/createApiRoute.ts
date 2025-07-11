@@ -67,6 +67,7 @@ export const createApiRoute = <
     headers: IsNever<TRequestHeaders> extends true ? {} : Static<TRequestHeaders>;
     params: ExtractPathParams<TPath>;
     auth: IsNever<TAuth> extends true ? never : ExtractAuthResultFromSchemes<TAuth>;
+    rawRequest: any;
   }) => Promise<TransformResponseSchemaToOutput<TResponse>>
 }) => {
   return config;

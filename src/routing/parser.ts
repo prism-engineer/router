@@ -20,6 +20,21 @@ export const createRouteParser = (): RouteParser => {
       let moduleExports: any;
 
       try {
+        // For TypeScript files in test environment, use ts-node to compile and import
+        if (filePath.endsWith('.ts') && process.env.NODE_ENV === 'test') {
+          // Check if ts-node is available
+          try {
+            require('ts-node/register');
+          } catch {
+            // ts-node not available, fall back to regular require
+          }
+        }
+        
+        // Clear require cache to ensure fresh imports in tests
+        if (process.env.NODE_ENV === 'test') {
+          delete require.cache[resolvedPath];
+        }
+        
         moduleExports = require(resolvedPath);
       } catch (importError) {
         throw new Error(`Failed to parse route file ${filePath}: ${importError}`);
