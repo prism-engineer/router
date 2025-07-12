@@ -1,6 +1,6 @@
 {
   "name": "@prism-engineer/router",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Type-safe Express.js router with automatic client generation",
   "main": "dist/router.js",
   "types": "dist/router.d.ts",
@@ -72,6 +72,7 @@
     "@sinclair/typebox-codegen": "^0.11.1",
     "@types/node": "^24.0.10",
     "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "express": "^5.1.0",
     "glob": "^11.0.3",
     "json-schema-to-typescript": "^15.0.4"

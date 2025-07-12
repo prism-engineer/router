@@ -4,6 +4,7 @@ import { createFileRouteLoader } from './routing/loader';
 import { createCompiler } from './compilation/compiler';
 import { createRouteParser, ParsedRoute } from './routing/parser';
 import { validateAuth } from './createAuthScheme';
+import { createValidationMiddleware } from './validation/middleware';
 
 
 export const createRouter = (): RouterInterface => {
@@ -58,10 +59,19 @@ export const createRouter = (): RouterInterface => {
       routes.push(route);
       
       // Convert path params from {param} to :param format for Express
-      const expressPath = prefix + route.path.replace(/{(\w+)}/g, ':$1');
+      const expressPath = (prefix || '') + route.path.replace(/{(\w+)}/g, ':$1');
       
       // Create middleware array
       const middleware: any[] = [];
+      
+      // Add validation middleware if request schemas are defined
+      if (route.request && (route.request.query || route.request.body || route.request.headers)) {
+        middleware.push(createValidationMiddleware({
+          query: route.request.query,
+          body: route.request.body,
+          headers: route.request.headers
+        }));
+      }
       
       // Add auth middleware if auth is defined
       if (route.auth) {
