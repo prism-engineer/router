@@ -58,7 +58,7 @@ export const createRouter = (): RouterInterface => {
       routes.push(route);
       
       // Convert path params from {param} to :param format for Express
-      const expressPath = prefix + route.path.replace(/{(\w+)}/g, ':$1');
+      const expressPath = (prefix || '') + route.path.replace(/{(\w+)}/g, ':$1');
       
       // Create middleware array
       const middleware: any[] = [];
@@ -98,6 +98,11 @@ export const createRouter = (): RouterInterface => {
               return next(new Error('No content type specified for custom response handler'));
             }
             res.setHeader('Content-Type', responseSchema?.contentType);
+
+            for(const [key, value] of Object.entries(result.headers || {})) {
+              res.setHeader(key, value as string);
+            }
+
             res.json(result.body);
           }
         }
