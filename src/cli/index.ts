@@ -2,7 +2,7 @@
 
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
-import { router } from '../router';
+import { router } from '../router.js';
 
 export interface PrismCliConfig {
   outputDir: string;
@@ -19,7 +19,9 @@ export interface PrismCliConfig {
 
 async function loadConfig(): Promise<PrismCliConfig> {
   const configPaths = [
+    'config.prism.router.ts',
     'config.prism.router.js',
+    'prism.config.ts',
     'prism.config.js'
   ];
 
@@ -35,20 +37,12 @@ async function loadConfig(): Promise<PrismCliConfig> {
           return config.default || config;
         } catch (tsError) {
           console.log('tsError', tsError);
-          // If TypeScript import fails, try requiring it (in case it's been compiled)
-          try {
-            delete require.cache[fullPath];
-            const config = require(fullPath);
-            return config.default || config;
-          } catch (requireError) {
-            continue; // Try next config file
-          }
+          continue; // Try next config file
         }
       } else {
-        // For .js files, use require
+        // For .js files, use dynamic import
         try {
-          delete require.cache[fullPath];
-          const config = require(fullPath);
+          const config = await import(fullPath);
           return config.default || config;
         } catch (jsError) {
           continue; // Try next config file

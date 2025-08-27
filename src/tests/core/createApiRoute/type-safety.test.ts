@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Type } from '@sinclair/typebox';
-import { createApiRoute } from '../../../createApiRoute';
-import { createAuthScheme } from '../../../createAuthScheme';
+import { createApiRoute } from '../../../createApiRoute.js';
+import { createAuthScheme } from '../../../createAuthScheme.js';
 
 describe('createApiRoute - Type Safety', () => {
   it('should infer correct path parameter types', () => {

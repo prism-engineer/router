@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { router } from '../../router';
+import { router } from '../../router.js';
 import path from 'path';
 import fs from 'fs/promises';
 

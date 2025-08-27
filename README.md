@@ -2,6 +2,8 @@
 
 A type-safe router library that provides Express.js integration with automatic API client code generation. This library serves as a wrapper around Express.js that adds:
 
+> **⚠️ Breaking Change Notice**: Starting from version 0.1.0, this package uses **ES Modules (ESM)** only. If you need CommonJS support, please use version 0.0.11 or earlier.
+
 1. Dynamic route loading from file patterns
 2. Automatic TypeScript API client generation
 3. Type-safe API consumption for frontends and backends
@@ -26,7 +28,16 @@ npm install @prism-engineer/router
 npm install @sinclair/typebox express
 ```
 
-**Note:** Both TypeBox and Express.js are required dependencies - TypeBox for defining route schemas with runtime validation and type safety, and Express.js as the underlying web framework. Note that in the current version, TypeBox is actually included as a dependency, not a peer dependency.
+**Requirements:**
+- **Node.js 16+**: Required for ES Module support
+- **ES Modules**: This package now uses ESM exclusively (version 0.1.0+)
+- **TypeBox**: Required for defining route schemas with runtime validation and type safety
+- **Express.js**: Required as the underlying web framework
+
+**Migration from CommonJS**: If you're upgrading from version 0.0.11 or earlier, you'll need to:
+1. Update your `package.json` to include `"type": "module"`
+2. Change `require()` statements to `import` statements  
+3. Change `module.exports` to `export` statements
 
 ## Quick Start
 
@@ -876,7 +887,8 @@ export default {
 
 ## Package Info
 
-- Package name: `@prism-engineer/router`
-- Type: Library package for Express.js applications
-- Current version: 0.0.5
-- Node.js compatibility: >= 16.0.0
+- **Package name**: `@prism-engineer/router`
+- **Type**: ES Module library for Express.js applications
+- **Current version**: 0.1.0 (ESM-only)
+- **Last CommonJS version**: 0.0.11
+- **Node.js compatibility**: >= 16.0.0 (ES Modules required)

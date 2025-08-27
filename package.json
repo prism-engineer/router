@@ -1,6 +1,7 @@
 {
   "name": "@prism-engineer/router",
-  "version": "0.0.10",
+  "version": "0.1.0",
+  "type": "module",
   "description": "Type-safe Express.js router with automatic client generation",
   "main": "dist/router.js",
   "types": "dist/router.d.ts",
@@ -10,12 +11,10 @@
   "exports": {
     ".": {
       "types": "./dist/router.d.ts",
-      "require": "./dist/router.js",
       "import": "./dist/router.js"
     },
     "./dist/compilation/makeApiCall": {
       "types": "./dist/compilation/makeApiCall.d.ts",
-      "require": "./dist/compilation/makeApiCall.js",
       "import": "./dist/compilation/makeApiCall.js"
     }
   },

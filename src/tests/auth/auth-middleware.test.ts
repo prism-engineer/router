@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createAuthScheme } from '../../createAuthScheme';
-import { createApiRoute } from '../../createApiRoute';
-import { createRouter } from '../../router';
+import { createAuthScheme } from '../../createAuthScheme.js';
+import { createApiRoute } from '../../createApiRoute.js';
+import { createRouter } from '../../router.js';
 import { Type } from '@sinclair/typebox';
 
 describe('Authentication - Auth Middleware', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createRouter } from '../../router';
+import { createRouter } from '../../router.js';
 import path from 'path';
 
 describe('Router System - Error Handling', () => {

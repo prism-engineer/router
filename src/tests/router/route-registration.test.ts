@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createRouter } from '../../router';
-import { createApiRoute } from '../../createApiRoute';
-import { createAuthScheme } from '../../createAuthScheme';
+import { createRouter } from '../../router.js';
+import { createApiRoute } from '../../createApiRoute.js';
+import { createAuthScheme } from '../../createAuthScheme.js';
 import { Type } from '@sinclair/typebox';
 import express from 'express';
 

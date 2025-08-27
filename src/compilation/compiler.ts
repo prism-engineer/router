@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { createTypeScriptClientGenerator, ClientGenerator } from './generator';
+import { createTypeScriptClientGenerator, ClientGenerator } from './generator.js';
 
 export const createCompiler = () => {
   const generator: ClientGenerator = createTypeScriptClientGenerator();

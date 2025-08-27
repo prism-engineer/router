@@ -1,5 +1,5 @@
 import { Static, TLiteral, TNumber, TObject, TSchema, TString, TUnion, Type } from '@sinclair/typebox';
-import { BaseAuthScheme, ExtractAuthResultFromSchemes } from './createAuthScheme';
+import { BaseAuthScheme, ExtractAuthResultFromSchemes } from './createAuthScheme.js';
 
 type Expand<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;
 

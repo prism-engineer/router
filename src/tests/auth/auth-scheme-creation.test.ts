@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createAuthScheme } from '../../createAuthScheme';
+import { createAuthScheme } from '../../createAuthScheme.js';
 import { Type } from '@sinclair/typebox';
 
 describe('Authentication - Auth Scheme Creation', () => {

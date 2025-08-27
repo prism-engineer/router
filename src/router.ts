@@ -1,9 +1,9 @@
 import express, { Express } from 'express';
-import { RouterInterface, CompilationConfig } from './core/types';
-import { createFileRouteLoader } from './routing/loader';
-import { createCompiler } from './compilation/compiler';
-import { createRouteParser, ParsedRoute } from './routing/parser';
-import { validateAuth } from './createAuthScheme';
+import { RouterInterface, CompilationConfig } from './core/types.js';
+import { createFileRouteLoader } from './routing/loader.js';
+import { createCompiler } from './compilation/compiler.js';
+import { createRouteParser, ParsedRoute } from './routing/parser.js';
+import { validateAuth } from './createAuthScheme.js';
 
 
 export const createRouter = (): RouterInterface => {
@@ -143,6 +143,6 @@ export const createRouter = (): RouterInterface => {
 // Export singleton instance
 export const router = createRouter();
 
-export { createApiRoute } from './createApiRoute';
-export { createAuthScheme } from './createAuthScheme';
-export type { PrismCliConfig } from './cli/index';
+export { createApiRoute } from './createApiRoute.js';
+export { createAuthScheme } from './createAuthScheme.js';
+export type { PrismCliConfig } from './cli/index.js';

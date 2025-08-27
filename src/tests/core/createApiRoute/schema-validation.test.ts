@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Type } from '@sinclair/typebox';
-import { createApiRoute } from '../../../createApiRoute';
+import { createApiRoute } from '../../../createApiRoute.js';
 
 describe('createApiRoute - Request/Response Schema Validation', () => {
   it('should validate TypeBox request body schema', () => {

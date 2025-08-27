@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { Type } from '@sinclair/typebox';
-import { createApiRoute } from '../../createApiRoute';
-import { createRouter } from '../../router';
+import { createApiRoute } from '../../createApiRoute.js';
+import { createRouter } from '../../router.js';
 
 describe('Response Header Validation', () => {
   let router: any;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Type } from '@sinclair/typebox';
-import { createApiRoute } from '../../../createApiRoute';
-import { createAuthScheme } from '../../../createAuthScheme';
+import { createApiRoute } from '../../../createApiRoute.js';
+import { createAuthScheme } from '../../../createAuthScheme.js';
 
 describe('createApiRoute - Route Creation', () => {
   it('should create a basic GET route', () => {

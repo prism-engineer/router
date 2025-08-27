@@ -1,4 +1,4 @@
-import { createApiRoute } from '../../../../createApiRoute';
+import { createApiRoute } from '../../../../createApiRoute.js';
 import { Type } from '@sinclair/typebox';
 
 export const getUsersRoute = createApiRoute({

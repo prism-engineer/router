@@ -3,7 +3,7 @@
 
 import Ajv from 'ajv';
 
-const ajv = new Ajv({ allErrors: true, verbose: true });
+const ajv = new Ajv.default({ allErrors: true, verbose: true });
 
 interface ApiCallOptions {
   baseUrl: string;

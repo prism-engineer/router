@@ -24,18 +24,14 @@ export const createRouteParser = (): RouteParser => {
         if (filePath.endsWith('.ts') && process.env.NODE_ENV === 'test') {
           // Check if ts-node is available
           try {
-            require('ts-node/register');
+            await import('ts-node/register' as any);
           } catch {
-            // ts-node not available, fall back to regular require
+            // ts-node not available, fall back to regular import
           }
         }
         
-        // Clear require cache to ensure fresh imports in tests
-        if (process.env.NODE_ENV === 'test') {
-          delete require.cache[resolvedPath];
-        }
-        
-        moduleExports = require(resolvedPath);
+        // Use dynamic import for ES modules (cache busting handled automatically)
+        moduleExports = await import(resolvedPath + '?t=' + Date.now());
       } catch (importError) {
         throw new Error(`Failed to parse route file ${filePath}: ${importError}`);
       }

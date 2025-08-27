@@ -1,4 +1,4 @@
-import { CompilationConfig } from './core/types';
+import { CompilationConfig } from './core/types.js';
 
 export async function loadConfig(configPath?: string): Promise<CompilationConfig> {
   const filePath = configPath || 'config.prism.router.ts';
