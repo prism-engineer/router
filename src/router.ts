@@ -143,6 +143,6 @@ export const createRouter = (): RouterInterface => {
 // Export singleton instance
 export const router = createRouter();
 
-export { createApiRoute } from './createApiRoute.js';
-export { createAuthScheme } from './createAuthScheme.js';
+export * from './createApiRoute.js';
+export * from './createAuthScheme.js';
 export type { PrismCliConfig } from './cli/index.js';
