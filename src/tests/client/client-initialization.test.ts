@@ -28,8 +28,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'CustomClient',
       baseUrl: 'https://api.example.com',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 
@@ -46,8 +46,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'MyApiClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 
@@ -87,8 +87,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'NestedClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures'),
+        pattern: /.*\.ts$/
       }]
     });
 
@@ -107,8 +107,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'ExportClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 
@@ -143,8 +143,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'CustomDirClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 
@@ -159,8 +159,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'FetchClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 
@@ -179,8 +179,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'DocClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 
@@ -199,8 +199,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'TestClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     })).rejects.toThrow();
   });
@@ -233,7 +233,7 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'FilteredClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
         pattern: /hello\.js$/ // Only hello.ts file
       }]
     });
@@ -254,8 +254,8 @@ describe('Frontend Client - Client Initialization', () => {
         name: `ConcurrentClient${i}`,
         baseUrl: 'http://localhost:3000',
         routes: [{
-          directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-          pattern: /.*\.js$/
+          directory: path.resolve(__dirname, '../router/fixtures/api'),
+          pattern: /.*\.ts$/
         }]
       })
     );
@@ -279,8 +279,8 @@ describe('Frontend Client - Client Initialization', () => {
       name: 'PreserveClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 

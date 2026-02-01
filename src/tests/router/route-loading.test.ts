@@ -11,16 +11,16 @@ describe('Router System - Route Loading', () => {
   });
 
   it('should load routes from a single directory with JavaScript pattern', async () => {
-    const fixturesPath = path.join(process.cwd(), 'dist/tests/router/fixtures/api');
+    const fixturesPath = path.join(process.cwd(), 'src/tests/router/fixtures/api');
     
-    await router.loadRoutes(fixturesPath, /\.js$/);
+    await router.loadRoutes(fixturesPath, /\.ts$/);
     
     expect(router.app).toBeDefined();
     expect(typeof router.loadRoutes).toBe('function');
   });
 
   it('should load routes with specific filename pattern', async () => {
-    const fixturesPath = path.join(process.cwd(), 'dist/tests/router/fixtures/api');
+    const fixturesPath = path.join(process.cwd(), 'src/tests/router/fixtures/api');
     
     // Load only files matching 'hello.js'
     await router.loadRoutes(fixturesPath, /hello\.js$/);
@@ -29,18 +29,18 @@ describe('Router System - Route Loading', () => {
   });
 
   it('should load routes from nested directories', async () => {
-    const fixturesPath = path.join(process.cwd(), 'dist/tests/router/fixtures/api/v1');
+    const fixturesPath = path.join(process.cwd(), 'src/tests/router/fixtures/api/v1');
     
-    await router.loadRoutes(fixturesPath, /\.js$/);
+    await router.loadRoutes(fixturesPath, /\.ts$/);
     
     expect(router.app).toBeDefined();
   });
 
   it('should load routes with JavaScript pattern', async () => {
-    const fixturesPath = path.join(process.cwd(), 'dist/tests/router/fixtures/api');
+    const fixturesPath = path.join(process.cwd(), 'src/tests/router/fixtures/api');
     
     // This should find .js files in our compiled test setup
-    await router.loadRoutes(fixturesPath, /\.js$/);
+    await router.loadRoutes(fixturesPath, /\.ts$/);
     
     expect(router.app).toBeDefined();
   });
