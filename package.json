@@ -1,6 +1,6 @@
 {
   "name": "@prism-engineer/router",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "description": "Type-safe Express.js router with automatic client generation",
   "main": "./dist/router.cjs",
