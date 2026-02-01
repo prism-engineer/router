@@ -1,3 +1,13 @@
 coverage/
 node_modules/
 dist/
+
+# Test artifacts
+test-generated/
+test-routes/
+
+# Config files (for local testing)
+config.prism.router.ts
+config.prism.router.js
+prism.config.ts
+prism.config.js

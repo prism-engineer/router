@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { router } from '../router.js';
@@ -36,7 +34,6 @@ async function loadConfig(): Promise<PrismCliConfig> {
           const config = await import(fullPath);
           return config.default || config;
         } catch (tsError) {
-          console.log('tsError', tsError);
           continue; // Try next config file
         }
       } else {
@@ -56,16 +53,18 @@ async function loadConfig(): Promise<PrismCliConfig> {
   throw new Error(
     `No configuration file found. Please create one of:\n` +
     configPaths.map(p => `  - ${p}`).join('\n') +
-    `\n\nExample config.prism.router.ts:\n` +
+    `\n\nExample config.prism.router.js:\n` +
     `export default {\n` +
     `  outputDir: './generated',\n` +
     `  name: 'ApiClient',\n` +
     `  baseUrl: 'http://localhost:3000',\n` +
-    `  routes: {\n` +
-    `    directory: './api',\n` +
-    `    pattern: /.*\\.ts$/\n` +
-    `  }\n` +
-    `} as const;`
+    `  routes: [\n` +
+    `    {\n` +
+    `      directory: './api',\n` +
+    `      pattern: /.*\\.ts$/\n` +
+    `    }\n` +
+    `  ]\n` +
+    `};`
   );
 }
 
@@ -91,7 +90,10 @@ async function runCompile(): Promise<void> {
     console.log(`\n✅ API client generated successfully!`);
     console.log(`📄 Generated file: ${config.outputDir}/${config.name}.generated.ts`);
     console.log(`\n💡 Usage:`);
-    console.log(`import { create${config.name} } from './${config.outputDir}/${config.name}.generated';`);
+    const importPath = config.outputDir.startsWith('./') 
+      ? config.outputDir 
+      : `./${config.outputDir}`;
+    console.log(`import { create${config.name} } from '${importPath}/${config.name}.generated';`);
     console.log(`const client = create${config.name}('${config.baseUrl}');`);
     
   } catch (error) {
@@ -119,18 +121,27 @@ EXAMPLES:
   npx prism-router help
 
 CONFIGURATION:
-  Create a config file in your project root:
+  Create a config file in your project root (supports .ts or .js):
+  - config.prism.router.ts
+  - config.prism.router.js
+  - prism.config.ts
+  - prism.config.js
 
-  config.prism.router.ts:
+  Example config.prism.router.js:
   export default {
     outputDir: './generated',
-    name: 'ApiClient', 
+    name: 'ApiClient',
     baseUrl: 'http://localhost:3000',
-    routes: {
-      directory: './api',
-      pattern: /.*\\.ts$/
-    }
-  } as const;
+    routes: [
+      {
+        directory: './api',
+        pattern: /.*\\.ts$/,
+        options: {
+          prefix: '/v1'  // optional
+        }
+      }
+    ]
+  };
 
 For more information, visit: https://github.com/prism-engineer/router
 `);
