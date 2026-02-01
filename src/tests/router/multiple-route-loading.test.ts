@@ -124,7 +124,7 @@ describe('Router System - Multiple Route Loading', () => {
     await router.loadRoutes(adminPath, /\.ts$/);
     
     // Try loading JavaScript files (should handle gracefully if none exist)
-    await router.loadRoutes(apiPath, /\.js$/);
+    await router.loadRoutes(apiPath, /\.ts$/);
     
     expect(router.app).toBeDefined();
   });

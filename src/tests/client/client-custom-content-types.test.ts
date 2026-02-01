@@ -25,8 +25,8 @@ describe('Frontend Client - Custom Content Types', () => {
       name: 'CustomContentClient',
       baseUrl: 'http://localhost:3000',
       routes: [{
-        directory: path.resolve(__dirname, '../../../dist/tests/router/fixtures/api'),
-        pattern: /.*\.js$/
+        directory: path.resolve(__dirname, '../router/fixtures/api'),
+        pattern: /.*\.ts$/
       }]
     });
 

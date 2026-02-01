@@ -1,9 +1,13 @@
 // Runtime API call function with validation and response parsing
 // This function is included in generated clients to handle all API calls
 
-import Ajv from 'ajv';
+import AjvModule from 'ajv';
 
-const ajv = new Ajv.default({ allErrors: true, verbose: true });
+// Handle ESM/CJS interop - AJV exports differently depending on module system
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Ajv = (AjvModule as any).default ?? AjvModule;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ajv = new Ajv({ allErrors: true, verbose: true }) as any;
 
 interface ApiCallOptions {
   baseUrl: string;
