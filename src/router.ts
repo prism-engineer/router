@@ -4,6 +4,20 @@ import { createFileRouteLoader } from './routing/loader.js';
 import { createCompiler } from './compilation/compiler.js';
 import { createRouteParser, ParsedRoute } from './routing/parser.js';
 import { validateAuth } from './createAuthScheme.js';
+import AjvModule from 'ajv';
+import addFormatsModule from 'ajv-formats';
+
+// Handle ESM/CJS interop
+const Ajv = (AjvModule as any).default ?? AjvModule;
+const addFormats = (addFormatsModule as any).default ?? addFormatsModule;
+
+// Strict mode for body validation — JSON bodies already have correct types
+const ajvStrict = new Ajv({ allErrors: true }) as any;
+addFormats(ajvStrict);
+
+// Coercion mode for query/params — URL values arrive as strings and need coercing
+const ajvCoerce = new Ajv({ allErrors: true, coerceTypes: true }) as any;
+addFormats(ajvCoerce);
 
 
 export const createRouter = (): RouterInterface => {
@@ -60,14 +74,91 @@ export const createRouter = (): RouterInterface => {
       // Convert path params from {param} to :param format for Express
       const expressPath = (prefix || '') + route.path.replace(/{(\w+)}/g, ':$1');
       
+      // Pre-compile validators at registration time (not per-request)
+      const validateBody = route.request?.body
+        ? ajvStrict.compile(route.request.body)
+        : null;
+      const validateQuery = route.request?.query
+        ? ajvCoerce.compile(route.request.query)
+        : null;
+      const validateParams = route.request?.params
+        ? ajvCoerce.compile(route.request.params)
+        : null;
+
       // Create middleware array
       const middleware: any[] = [];
       
       // Add auth middleware if auth is defined
       if (route.auth) {
         middleware.push(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-          const authContext = await validateAuth(route.auth, req);
-          (req as any).auth = authContext;
+          try {
+            const authContext = await validateAuth(route.auth, req);
+            (req as any).auth = authContext;
+            next();
+          } catch (error: any) {
+            const status = error.statusCode ?? error.status ?? 401;
+            res.status(status).json({
+              error: 'Unauthorized',
+              message: error.message,
+            });
+          }
+        });
+      }
+
+      // Add request validation middleware
+      if (validateBody || validateQuery || validateParams) {
+        middleware.push((req: express.Request, res: express.Response, next: express.NextFunction) => {
+          const details: { path: string; message: string; keyword: string }[] = [];
+
+          if (validateBody && !validateBody(req.body)) {
+            for (const err of validateBody.errors ?? []) {
+              details.push({
+                path: err.instancePath || '/',
+                message: err.message ?? 'validation failed',
+                keyword: err.keyword,
+              });
+            }
+          }
+
+          if (validateQuery) {
+            // Clone so coercion doesn't mutate the original Express query object
+            const coerced = { ...req.query };
+            if (!validateQuery(coerced)) {
+              for (const err of validateQuery.errors ?? []) {
+                details.push({
+                  path: err.instancePath || '/',
+                  message: err.message ?? 'validation failed',
+                  keyword: err.keyword,
+                });
+              }
+            } else {
+              // Store coerced values — req.query is a getter-only in Express 5
+              (req as any)._validatedQuery = coerced;
+            }
+          }
+
+          if (validateParams) {
+            const coerced = { ...req.params };
+            if (!validateParams(coerced)) {
+              for (const err of validateParams.errors ?? []) {
+                details.push({
+                  path: err.instancePath || '/',
+                  message: err.message ?? 'validation failed',
+                  keyword: err.keyword,
+                });
+              }
+            } else {
+              (req as any)._validatedParams = coerced;
+            }
+          }
+
+          if (details.length > 0) {
+            return res.status(400).json({
+              error: 'Validation Error',
+              details,
+            });
+          }
+
           next();
         });
       }
@@ -75,10 +166,10 @@ export const createRouter = (): RouterInterface => {
       // Add main handler
       middleware.push(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const result = await route.handler({
-          query: req.query,
+          query: (req as any)._validatedQuery ?? req.query,
           body: req.body,
           headers: req.headers,
-          params: req.params,
+          params: (req as any)._validatedParams ?? req.params,
           auth: (req as any).auth,
           rawRequest: req
         });
@@ -106,8 +197,6 @@ export const createRouter = (): RouterInterface => {
             res.json(result.body);
           }
         }
-
-        next();
       });
       
       // Register the route with Express
